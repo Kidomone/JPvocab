@@ -74,17 +74,14 @@ react-project/
 │   ├── components/            # Общие компоненты оформления
 │   │   ├── Header.tsx         # Шапка с логотипом и навигацией
 │   │   └── Layout.tsx         # Каркас страницы (хедер + футер)
-│   ├── data/
-│   │   └── mockData.ts        # Демонстрационные данные для разбора предложений и слов
 │   ├── pages/                 # Экраны приложения
 │   │   ├── HomePage.tsx       # Главная страница (/)
 │   │   ├── LoginPage.tsx      # Авторизация (/login)
 │   │   ├── ResultPage.tsx     # Результаты разбора (/result)
 │   │   └── VocabPage.tsx      # Словарь (/vocab)
-│   ├── theme/
-│   │   └── theme.ts           # Настройка темы Material UI (цвет, типографика)
-│   ├── types/
-│   │   └── index.ts           # TypeScript интерфейсы
+│   ├── mockData.ts        # Демонстрационные данные для разбора предложений и слов
+│   ├── theme.ts           # Настройка темы Material UI (цвет, типографика)
+│   ├── index.ts           # TypeScript интерфейсы
 │   ├── App.tsx                # Клиентский роутинг (React Router)
 │   ├── index.css              # Базовый CSS-reset
 │   └── main.tsx               # Точка входа
