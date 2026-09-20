@@ -35,7 +35,7 @@ export const HomePage = () => {
             flexDirection: 'column',
             alignItems: 'center',
             width: '100%',
-            maxWidth: 520,
+            maxWidth: 480,
           }}
         >
           {/* Main Title */}
@@ -62,13 +62,13 @@ export const HomePage = () => {
               backgroundColor: '#ECECEC',
               borderRadius: '6px',
               px: 2,
-              py: 1.2,
+              py: 0.8,
               display: 'flex',
               alignItems: 'center',
               transition: 'background-color 0.2s, box-shadow 0.2s',
               '&:focus-within': {
-                backgroundColor: '#E4E4E4',
-                boxShadow: '0 0 0 2px rgba(153, 15, 15, 0.25)',
+                backgroundColor: '#E2E2E2',
+                boxShadow: '0 0 0 2px #990f0f58',
               },
               mb: 2.5,
             }}
@@ -82,7 +82,7 @@ export const HomePage = () => {
                 'aria-label': 'японский текст для разбора',
                 style: {
                   textAlign: 'center',
-                  fontSize: '1rem',
+                  fontSize: '0.95rem',
                   color: '#222222',
                   fontFamily: "'Noto Sans JP', 'Inter', sans-serif",
                 },

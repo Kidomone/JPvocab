@@ -65,9 +65,9 @@ react-project/
 ├── docs/
 │   └── screenshots/ 
 │       ├── 01-home.png
-│       ├── 02-login.png
-│       ├── 03-result.png
-│       └── 04-vocab.png
+│       ├── 02-result.png
+│       ├── 03-vocab.png
+│       └── 04-login.png
 ├── public/
 │   └── favicon.svg            # Иконка приложения (кандзи 語)
 ├── src/
@@ -82,7 +82,7 @@ react-project/
 │   │   ├── ResultPage.tsx     # Результаты разбора (/result)
 │   │   └── VocabPage.tsx      # Словарь (/vocab)
 │   ├── theme/
-│   │   └── theme.ts           # Настройка темы Material UI (цвет #990F0F, типографика)
+│   │   └── theme.ts           # Настройка темы Material UI (цвет, типографика)
 │   ├── types/
 │   │   └── index.ts           # TypeScript интерфейсы
 │   ├── App.tsx                # Клиентский роутинг (React Router)
@@ -98,14 +98,14 @@ react-project/
 ## 6. Инструкция по запуску frontend
 
 ### Требования
-- [Node.js](https://nodejs.org/) (версия 18+)
+- Node.js (версия 18+)
 - `npm`
 
 ### Шаги запуска:
 
 1. Перейдите в каталог frontend-проекта:
    ```bash
-   cd react-project
+   cd JPvocab
    ```
 
 2. Установите зависимости:
@@ -123,3 +123,18 @@ react-project/
    ```bash
    npm run build
    ```
+---
+
+## 7. Скриншоты экранов
+
+### 1. Главная страница (/)
+![Home](docs/screenshots/01-home.png)
+
+### 2. Экран разбора предложения (/result)
+![Result](docs/screenshots/02-result.png)
+
+### 3. Экран словаря (/vocab)
+![Vocab](docs/screenshots/03-vocab.png)
+
+### 4. Экран авторизации (/login)
+![Login](docs/screenshots/04-login.png)
