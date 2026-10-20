@@ -1,12 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import { theme } from './theme';
-import { HomePage } from './pages/HomePage';
-import { LoginPage } from './pages/LoginPage';
-import { ResultPage } from './pages/ResultPage';
-import { VocabPage } from './pages/VocabPage';
+import { theme } from '../shared';
+import { HomePage, LoginPage, ResultPage, VocabPage } from '../pages';
 
-const App = () => {
+export const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

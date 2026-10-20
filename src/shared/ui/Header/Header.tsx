@@ -1,6 +1,6 @@
 import { Box, Typography, Link as MuiLink } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { RED_COLOR } from '../theme';
+import { RED_COLOR } from '../../config';
 
 export const Header = () => {
   const location = useLocation();
@@ -71,7 +71,8 @@ export const Header = () => {
             color: '#FFFFFF',
             fontSize: '0.95rem',
             fontWeight: 500,
-            textDecoration: 'none',
+            textDecoration: location.pathname === '/login' ? 'underline' : 'none',
+            textUnderlineOffset: '4px',
             transition: 'opacity 0.2s',
             '&:hover': {
               opacity: 0.85,

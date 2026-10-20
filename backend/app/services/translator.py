@@ -3,14 +3,9 @@ from typing import Tuple
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 
 def is_japanese_text(text: str) -> bool:
-    """Detect if text contains Japanese characters (Hiragana, Katakana, or Kanji)."""
     return bool(re.search(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]', text))
 
 def translate_text(text: str, source_lang: str = "auto", target_lang: str = None) -> Tuple[str, str, str]:
-    """
-    Translates text between Japanese and English.
-    Returns a tuple of (translated_text, resolved_source_lang, resolved_target_lang).
-    """
     clean_text = text.strip()
     if not clean_text:
         return "", source_lang, target_lang or "en"

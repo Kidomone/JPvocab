@@ -17,8 +17,6 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     description="JPVocab API: Japanese-English language analysis, dictionary lookup, and vocabulary management.",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
 )
 
 

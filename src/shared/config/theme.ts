@@ -1,6 +1,5 @@
 import { createTheme } from '@mui/material/styles';
-
-export const RED_COLOR = '#990F0F';
+import { RED_COLOR } from './colors';
 
 export const theme = createTheme({
   palette: {

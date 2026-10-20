@@ -11,8 +11,6 @@ from app.services.lemmatizer import (
     get_english_word_forms,
 )
 
-
-# Initialize Sudachi tokenizer singleton
 _dict_obj = None
 _tokenizer_obj = None
 
@@ -71,7 +69,6 @@ def tokenize_japanese_sentence(text: str) -> List[Dict[str, Any]]:
 
 
 def tokenize_english_sentence(text: str, context_translation: str = "") -> List[Dict[str, Any]]:
-    # 1. Parse contextual Japanese translation tokens to identify which words were actually used
     context_words = set()
     ja_tokens = []
     if context_translation:
@@ -84,7 +81,6 @@ def tokenize_english_sentence(text: str, context_translation: str = "") -> List[
         except Exception:
             pass
 
-    # 2. Extract English tokens (words and punctuation)
     raw_tokens = re.findall(r"\b[\w']+\b|[^\w\s]", text)
 
     results = []
@@ -108,10 +104,8 @@ def tokenize_english_sentence(text: str, context_translation: str = "") -> List[
 
         token_clean = token.lower()
 
-        # Check single word matches
         single_matches = search_english_word(token_clean, limit=6, context_words=context_words)
 
-        # Check if next word forms a meaningful phrase (e.g. phrasal verb 'turn out', 'look for')
         matches = single_matches
         is_phrase = False
         if i + 1 < len(raw_tokens):
@@ -120,9 +114,6 @@ def tokenize_english_sentence(text: str, context_translation: str = "") -> List[
                 phrase = f"{token_clean} {next_token.lower()}"
                 phrase_matches = search_english_word(phrase, limit=6, context_words=context_words)
                 
-                # Use phrase if:
-                # 1) The phrase has an exact match in the Japanese sentence context (e.g. phrasal verb), OR
-                # 2) Single word had no matches but the phrase did
                 phrase_has_exact_context = any(m.get("exact_context") for m in phrase_matches)
                 single_has_exact_context = any(m.get("exact_context") for m in single_matches)
 
@@ -133,7 +124,6 @@ def tokenize_english_sentence(text: str, context_translation: str = "") -> List[
                     matches = phrase_matches
                     is_phrase = True
 
-        # Check if any token from the Japanese translated sentence directly matches this English word
         word_forms = get_english_word_forms(token_clean)
 
         direct_ja_context = None
@@ -147,8 +137,6 @@ def tokenize_english_sentence(text: str, context_translation: str = "") -> List[
             if direct_ja_context:
                 break
 
-        # If a token in the translated Japanese sentence directly corresponds to this English word,
-        # prioritize it as the target word
         if direct_ja_context:
             context_entry = {
                 "kanji": direct_ja_context["surface"],
@@ -157,7 +145,7 @@ def tokenize_english_sentence(text: str, context_translation: str = "") -> List[
                 "in_context": True,
                 "exact_context": True,
             }
-            # Put context entry first, remove duplicates
+
             matches = [m for m in matches if m.get("kanji") != direct_ja_context["surface"]]
             matches.insert(0, context_entry)
 

@@ -43,7 +43,6 @@ def has_kanji(text: str) -> bool:
 
 
 def get_kanji_breakdown(text: str) -> List[Dict[str, str]]:
-    """Look up individual kanji components in kanjidic2.db."""
     conn = _get_kanjidic_connection()
     if not conn:
         return []
@@ -83,9 +82,6 @@ def get_kanji_breakdown(text: str) -> List[Dict[str, str]]:
 
 
 def search_japanese_word(word: str, pos_hint: Optional[str] = None) -> Optional[Dict]:
-    """
-    Look up a Japanese word (kanji or kana) in JMdict.db.
-    """
     conn = _get_jmdict_connection()
     if not conn:
         return None
