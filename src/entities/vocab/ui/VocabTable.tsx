@@ -7,21 +7,26 @@ import {
   TableHead,
   TableRow,
   InputBase,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
-import { RED_COLOR } from '../../../shared';
+import { RED_COLOR, useTranslation } from '../../../shared';
 import type { VocabItem } from '../model/types';
 
-interface VocabTableProps {
+export interface VocabTableProps {
   items: VocabItem[];
   onNoteChange: (id: number, val: string) => void;
+  onDelete?: (id: number) => void;
   minRows?: number;
 }
 
 export const VocabTable = ({
   items,
   onNoteChange,
+  onDelete,
   minRows = 4,
 }: VocabTableProps) => {
+  const { t, lang } = useTranslation();
   const emptyRowsCount = Math.max(0, minRows - items.length);
 
   return (
@@ -52,30 +57,29 @@ export const VocabTable = ({
             },
           }}
         >
-          {/* Header */}
           <TableHead>
             <TableRow sx={{ borderTop: '1px solid #D0D0D0' }}>
               <TableCell
                 align="center"
                 sx={{
-                  width: 80,
+                  width: 70,
                   fontWeight: 600,
                   color: '#222222',
                   fontSize: '1.1rem',
                 }}
               >
-                №
+                {t('tableNum')}
               </TableCell>
               <TableCell
                 align="center"
                 sx={{
-                  width: 200,
+                  width: 180,
                   fontWeight: 600,
                   color: '#222222',
                   fontSize: '1.1rem',
                 }}
               >
-                word
+                {t('tableWord')}
               </TableCell>
               <TableCell
                 align="center"
@@ -86,7 +90,7 @@ export const VocabTable = ({
                   fontSize: '1.1rem',
                 }}
               >
-                meaning
+                {t('tableMeaning')}
               </TableCell>
               <TableCell
                 align="center"
@@ -97,19 +101,31 @@ export const VocabTable = ({
                   fontSize: '1.1rem',
                 }}
               >
-                notes
+                {t('tableNotes')}
               </TableCell>
+              {onDelete && (
+                <TableCell
+                  align="center"
+                  sx={{
+                    width: 50,
+                    fontWeight: 600,
+                    color: '#222222',
+                    p: '8px',
+                  }}
+                >
+                  &nbsp;
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
 
-          {/* Body */}
           <TableBody>
             {items.map((item, idx) => (
               <TableRow
                 key={item.id}
                 sx={{
                   height: 52,
-                  transition: 'background-color 0.15s',
+                  transition: 'background-color 0.15s ease',
                   '&:hover': {
                     backgroundColor: '#FAFAFA',
                   },
@@ -142,10 +158,10 @@ export const VocabTable = ({
                   <InputBase
                     value={item.notes}
                     onChange={(e) => onNoteChange(item.id, e.target.value)}
-                    placeholder="Добавить заметку..."
+                    placeholder={t('notesPlaceholder')}
                     fullWidth
                     inputProps={{
-                      'aria-label': `Заметки для ${item.word}`,
+                      'aria-label': lang === 'en' ? `Notes for ${item.word}` : `Заметки для ${item.word}`,
                       style: {
                         textAlign: 'center',
                         fontSize: '1.05rem',
@@ -166,16 +182,36 @@ export const VocabTable = ({
                     }}
                   />
                 </TableCell>
+                {onDelete && (
+                  <TableCell align="center" sx={{ p: '4px 8px' }}>
+                    <Tooltip title={t('deleteTooltip')} arrow>
+                      <IconButton
+                        size="small"
+                        onClick={() => onDelete(item.id)}
+                        sx={{
+                          color: '#888888',
+                          transition: 'color 0.15s, transform 0.15s',
+                          '&:hover': {
+                            color: RED_COLOR,
+                            transform: 'scale(1.1)',
+                          },
+                        }}
+                      >
+                        <span style={{ fontSize: '1rem', lineHeight: 1 }}>✕</span>
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
 
-            {/* Empty placeholder rows */}
             {Array.from({ length: emptyRowsCount }).map((_, idx) => (
               <TableRow key={`empty-${idx}`} sx={{ height: 52 }}>
                 <TableCell align="center">&nbsp;</TableCell>
                 <TableCell align="center">&nbsp;</TableCell>
                 <TableCell align="center">&nbsp;</TableCell>
                 <TableCell align="center">&nbsp;</TableCell>
+                {onDelete && <TableCell align="center">&nbsp;</TableCell>}
               </TableRow>
             ))}
           </TableBody>

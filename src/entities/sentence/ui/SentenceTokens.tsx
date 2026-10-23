@@ -1,9 +1,9 @@
 import { Box } from '@mui/material';
-import { RED_COLOR } from '../../../shared';
+import { RED_COLOR, useTranslation } from '../../../shared';
 import type { ParsedToken } from '../model/types';
 import type { WordDetail } from '../../word';
 
-interface SentenceTokensProps {
+export interface SentenceTokensProps {
   tokens: ParsedToken[];
   activeWord?: WordDetail;
   onTokenClick: (detail?: WordDetail) => void;
@@ -14,6 +14,8 @@ export const SentenceTokens = ({
   activeWord,
   onTokenClick,
 }: SentenceTokensProps) => {
+  const { t } = useTranslation();
+
   return (
     <Box
       sx={{
@@ -46,14 +48,21 @@ export const SentenceTokens = ({
               borderBottom: isSelected
                 ? `3px solid ${RED_COLOR}`
                 : '3px solid transparent',
-              transition: 'all 0.15s ease-in-out',
+              transform: isSelected ? 'translateY(-2px)' : 'none',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': tok.detail
                 ? {
                     backgroundColor: 'rgba(153, 15, 15, 0.08)',
+                    transform: isSelected ? 'translateY(-2px)' : 'translateY(-1px)',
+                  }
+                : {},
+              '&:active': tok.detail
+                ? {
+                    transform: 'scale(0.97)',
                   }
                 : {},
             }}
-            title={tok.detail ? `Кликните для разбора: ${tok.text}` : undefined}
+            title={tok.detail ? `${t('tokenTooltip')} ${tok.text}` : undefined}
           >
             {tok.text}
           </Box>

@@ -1,14 +1,43 @@
 import { Box, Typography } from '@mui/material';
 import type { KanjiComponent } from '../model/types';
+import { useTranslation } from '../../../shared';
 
 interface KanjiBreakdownProps {
   components: KanjiComponent[];
 }
 
 export const KanjiBreakdown = ({ components }: KanjiBreakdownProps) => {
+  const { lang } = useTranslation();
+
   if (!components || components.length === 0) {
     return null;
   }
+
+  const formatReadings = (readings: string) => {
+    if (!readings) return '';
+    if (lang === 'en') {
+      return readings
+        .replace(/он\s*\/\s*кун/gi, 'on / kun')
+        .replace(/\bон\b/gi, 'on')
+        .replace(/\bкун\b/gi, 'kun');
+    }
+    return readings
+      .replace(/on\s*\/\s*kun/gi, 'он / кун')
+      .replace(/\bon\b/gi, 'он')
+      .replace(/\bkun\b/gi, 'кун');
+  };
+
+  const formatMeaning = (meaning: string) => {
+    if (!meaning) return '';
+    if (lang === 'en') {
+      return meaning
+        .replace(/^иероглиф:\s*/i, 'kanji character: ')
+        .replace(/^значение:\s*/i, 'definition of ');
+    }
+    return meaning
+      .replace(/^kanji character:\s*/i, 'иероглиф: ')
+      .replace(/^definition of\s*/i, 'значение: ');
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -41,7 +70,7 @@ export const KanjiBreakdown = ({ components }: KanjiBreakdownProps) => {
                 textAlign: 'right',
               }}
             >
-              {comp.meaning}
+              {formatMeaning(comp.meaning)}
             </Typography>
           </Box>
           <Typography
@@ -52,7 +81,7 @@ export const KanjiBreakdown = ({ components }: KanjiBreakdownProps) => {
               mt: 0.3,
             }}
           >
-            {comp.readings}
+            {formatReadings(comp.readings)}
           </Typography>
         </Box>
       ))}

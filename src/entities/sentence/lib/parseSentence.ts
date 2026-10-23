@@ -2,7 +2,7 @@ import type { ParsedToken } from '../model/types';
 import { DEFAULT_SENTENCE, DEFAULT_TOKENS } from '../model/mockData';
 import { MOCK_WORD_DETAILS } from '../../word';
 
-export function parseSentence(text: string): ParsedToken[] {
+export function parseSentence(text: string, lang: 'ru' | 'en' = 'ru'): ParsedToken[] {
   if (!text || text.trim() === '' || text === DEFAULT_SENTENCE) {
     return DEFAULT_TOKENS;
   }
@@ -27,11 +27,11 @@ export function parseSentence(text: string): ParsedToken[] {
       detail: {
         word: w,
         reading: w,
-        meaning: `definition of ${w}`,
+        meaning: lang === 'en' ? `definition of ${w}` : `значение: ${w}`,
         components: Array.from(w).map((char) => ({
           kanji: char,
-          meaning: `kanji character: ${char}`,
-          readings: 'он / кун',
+          meaning: lang === 'en' ? `kanji character: ${char}` : `иероглиф: ${char}`,
+          readings: lang === 'en' ? 'on / kun' : 'он / кун',
         })),
       },
     };

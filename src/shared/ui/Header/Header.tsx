@@ -1,9 +1,11 @@
 import { Box, Typography, Link as MuiLink } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { RED_COLOR } from '../../config';
+import { useTranslation } from '../../lib/i18n';
 
 export const Header = () => {
   const location = useLocation();
+  const { lang, setLang, toggleLang, t } = useTranslation();
 
   return (
     <Box
@@ -21,7 +23,6 @@ export const Header = () => {
         zIndex: 10,
       }}
     >
-      {/* Logo */}
       <RouterLink to="/" style={{ textDecoration: 'none', color: '#FFFFFF' }}>
         <Typography
           variant="h5"
@@ -43,7 +44,6 @@ export const Header = () => {
         </Typography>
       </RouterLink>
 
-      {/* Navigation Links */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 3 } }}>
         <MuiLink
           component={RouterLink}
@@ -61,7 +61,7 @@ export const Header = () => {
             },
           }}
         >
-          Мой Словарь
+          {t('navVocab')}
         </MuiLink>
 
         <MuiLink
@@ -82,6 +82,101 @@ export const Header = () => {
         >
           Kidomone
         </MuiLink>
+
+        <Box
+          onClick={toggleLang}
+          role="button"
+          tabIndex={0}
+          aria-label={lang === 'ru' ? 'Switch to English' : 'Переключить на русский'}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleLang();
+            }
+          }}
+          sx={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            width: 72,
+            height: 28,
+            backgroundColor: 'rgba(0, 0, 0, 0.28)',
+            border: '1px solid rgba(255, 255, 255, 0.35)',
+            borderRadius: '14px',
+            p: '2px',
+            cursor: 'pointer',
+            userSelect: 'none',
+            overflow: 'hidden',
+            transition: 'border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease',
+            '&:hover': {
+              borderColor: 'rgba(255, 255, 255, 0.8)',
+              backgroundColor: 'rgba(0, 0, 0, 0.36)',
+            },
+            '&:focus-visible': {
+              outline: '2px solid #FFFFFF',
+              outlineOffset: 2,
+            },
+          }}
+          title={lang === 'ru' ? 'Switch to English' : 'Переключить на русский'}
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 2,
+              bottom: 2,
+              left: 2,
+              width: 34,
+              backgroundColor: '#FFFFFF',
+              borderRadius: '12px',
+              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.25)',
+              transform: lang === 'ru' ? 'translateX(0)' : 'translateX(34px)',
+              transition: 'transform 0.3s cubic-bezier(0.34, 1.25, 0.64, 1)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          <Box
+            component="span"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLang('ru');
+            }}
+            sx={{
+              flex: 1,
+              textAlign: 'center',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              zIndex: 1,
+              letterSpacing: '0.4px',
+              color: lang === 'ru' ? RED_COLOR : 'rgba(255, 255, 255, 0.85)',
+              transition: 'color 0.25s ease',
+              lineHeight: '24px',
+            }}
+          >
+            RU
+          </Box>
+
+          <Box
+            component="span"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLang('en');
+            }}
+            sx={{
+              flex: 1,
+              textAlign: 'center',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              zIndex: 1,
+              letterSpacing: '0.4px',
+              color: lang === 'en' ? RED_COLOR : 'rgba(255, 255, 255, 0.85)',
+              transition: 'color 0.25s ease',
+              lineHeight: '24px',
+            }}
+          >
+            EN
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
