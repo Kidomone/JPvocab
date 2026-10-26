@@ -5,12 +5,14 @@ import type { WordDetail } from '../../word';
 
 export interface SentenceTokensProps {
   tokens: ParsedToken[];
+  selectedTokenId?: string;
   activeWord?: WordDetail;
-  onTokenClick: (detail?: WordDetail) => void;
+  onTokenClick: (detail?: WordDetail, tok?: ParsedToken) => void;
 }
 
 export const SentenceTokens = ({
   tokens,
+  selectedTokenId,
   activeWord,
   onTokenClick,
 }: SentenceTokensProps) => {
@@ -27,16 +29,25 @@ export const SentenceTokens = ({
       }}
     >
       {tokens.map((tok) => {
-        const isSelected = activeWord?.word === tok.text;
+        const isSelected = selectedTokenId
+          ? tok.id === selectedTokenId
+          : Boolean(
+              activeWord &&
+              (tok.text === activeWord.word ||
+               tok.detail?.word === activeWord.word ||
+               tok.detail === activeWord)
+            );
         return (
           <Box
             key={tok.id}
-            onClick={() => onTokenClick(tok.detail)}
+            onClick={() => onTokenClick(tok.detail, tok)}
             component="span"
             sx={{
-              fontFamily: "'Noto Sans JP', sans-serif",
+              display: 'inline-block',
+              fontFamily: "'Noto Sans JP', 'Inter', sans-serif",
               fontSize: { xs: '1.75rem', sm: '2.1rem' },
               fontWeight: 500,
+              lineHeight: 1.2,
               color: '#000000',
               cursor: tok.detail ? 'pointer' : 'default',
               px: 0.8,

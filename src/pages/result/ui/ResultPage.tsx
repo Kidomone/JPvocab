@@ -23,6 +23,7 @@ export const ResultPage = () => {
   const rawText = searchParams.get('text') ?? DEFAULT_SENTENCE;
 
   const [activeWord, setActiveWord] = useState<WordDetail>(TODAY_WORD_DETAIL);
+  const [selectedTokenId, setSelectedTokenId] = useState<string>('1');
   const [prevRawText, setPrevRawText] = useState(rawText);
   const [prevLang, setPrevLang] = useState(lang);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,9 +47,11 @@ export const ResultPage = () => {
         setAnalysisResult(res);
         if (res.tokens.length > 0) {
           const currentWordKey = activeWord?.word;
-          const matchingInNew = res.tokens.find((t) => t.detail?.word === currentWordKey)?.detail;
-          const firstWithDetail = res.tokens.find((t) => t.detail)?.detail;
-          setActiveWord(matchingInNew || firstWithDetail || TODAY_WORD_DETAIL);
+          const matchingToken = res.tokens.find((t) => t.detail?.word === currentWordKey);
+          const firstWithDetail = res.tokens.find((t) => t.detail);
+          const selected = matchingToken || firstWithDetail || res.tokens[0];
+          setSelectedTokenId(selected.id);
+          setActiveWord(selected.detail || TODAY_WORD_DETAIL);
         }
       })
       .catch((err) => {
@@ -73,7 +76,10 @@ export const ResultPage = () => {
     }
   };
 
-  const handleTokenClick = (detail?: WordDetail) => {
+  const handleTokenClick = (detail?: WordDetail, tok?: ParsedToken) => {
+    if (tok) {
+      setSelectedTokenId(tok.id);
+    }
     if (detail) {
       setActiveWord(detail);
     }
@@ -164,6 +170,7 @@ export const ResultPage = () => {
               >
                 <SentenceTokens
                   tokens={tokens}
+                  selectedTokenId={selectedTokenId}
                   activeWord={activeWord}
                   onTokenClick={handleTokenClick}
                 />

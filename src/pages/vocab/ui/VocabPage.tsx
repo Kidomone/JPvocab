@@ -8,13 +8,17 @@ import {
   clearVocab,
   VocabTable,
   VocabEmptyState,
+  VocabSearchEmptyState,
   VocabSkeleton,
+  VocabSearchBar,
+  filterVocabList,
   type VocabItem,
 } from '../../../entities';
 
 export const VocabPage = () => {
   const { t, lang } = useTranslation();
   const [vocabList, setVocabList] = useState<VocabItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -47,9 +51,13 @@ export const VocabPage = () => {
   const handleClearAll = () => {
     const cleared = clearVocab();
     setVocabList(cleared);
+    setSearchQuery('');
     setSnackbarMessage(t('vocabClearedSnackbar'));
     setSnackbarOpen(true);
   };
+
+  const filteredList = filterVocabList(vocabList, searchQuery);
+  const isSearching = Boolean(searchQuery.trim());
 
   return (
     <Layout>
@@ -71,14 +79,22 @@ export const VocabPage = () => {
             fontSize: { xs: '2rem', sm: '2.5rem' },
             color: RED_COLOR,
             textAlign: 'center',
-            mb: 1.5,
+            mb: 2.5,
             fontFamily: "'Inter', sans-serif",
           }}
         >
           {t('vocabTitle')}
         </Typography>
 
-        {/* Action bar when data exists */}
+        {/* Search Bar */}
+        {!isLoading && vocabList.length > 0 && (
+          <VocabSearchBar
+            query={searchQuery}
+            onQueryChange={setSearchQuery}
+          />
+        )}
+
+        {/* Action bar */}
         {!isLoading && vocabList.length > 0 && (
           <Box
             sx={{
@@ -92,10 +108,30 @@ export const VocabPage = () => {
             }}
           >
             <Typography variant="body2" sx={{ color: '#666666', fontWeight: 500 }}>
-              {t('vocabCount')} {vocabList.length}
+              {isSearching
+                ? `${t('vocabFoundCount')} ${filteredList.length} / ${vocabList.length}`
+                : `${t('vocabCount')} ${vocabList.length}`}
             </Typography>
 
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+              {isSearching && (
+                <Button
+                  size="small"
+                  onClick={() => setSearchQuery('')}
+                  sx={{
+                    color: RED_COLOR,
+                    fontSize: '0.8rem',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    '&:hover': {
+                      backgroundColor: 'rgba(153, 15, 15, 0.06)',
+                    },
+                  }}
+                >
+                  {t('vocabResetSearchBtn')}
+                </Button>
+              )}
+
               <Button
                 size="small"
                 onClick={handleClearAll}
@@ -124,11 +160,20 @@ export const VocabPage = () => {
               <VocabEmptyState />
             </Box>
           </Fade>
+        ) : filteredList.length === 0 ? (
+          <Fade in timeout={350}>
+            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <VocabSearchEmptyState
+                query={searchQuery}
+                onReset={() => setSearchQuery('')}
+              />
+            </Box>
+          </Fade>
         ) : (
           <Fade in timeout={350}>
             <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
               <VocabTable
-                items={vocabList}
+                items={filteredList}
                 onNoteChange={handleNoteChange}
                 onDelete={handleDelete}
               />

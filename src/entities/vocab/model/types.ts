@@ -3,4 +3,5 @@ export interface VocabItem {
   word: string;
   meaning: string;
   notes: string;
+  reading?: string;
 }

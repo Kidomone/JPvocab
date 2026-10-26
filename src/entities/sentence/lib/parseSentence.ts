@@ -16,7 +16,7 @@ export function parseSentence(text: string, lang: 'ru' | 'en' = 'ru'): ParsedTok
   }
 
   return words.map((w, idx) => {
-    const known = MOCK_WORD_DETAILS[w];
+    const known = MOCK_WORD_DETAILS[w] || MOCK_WORD_DETAILS[w.toLowerCase()];
     if (known) {
       return { id: String(idx + 1), text: w, isClickable: true, detail: known };
     }

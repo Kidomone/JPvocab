@@ -36,6 +36,12 @@ export interface Translations {
   // Vocab Page
   vocabTitle: string;
   vocabCount: string;
+  vocabSearchPlaceholder: string;
+  vocabSearchAria: string;
+  vocabFoundCount: string;
+  vocabNoResultsTitle: string;
+  vocabNoResultsDesc: string;
+  vocabResetSearchBtn: string;
   clearVocabBtn: string;
   emptyVocabTitle: string;
   emptyVocabDesc: string;
