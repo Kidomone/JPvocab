@@ -9,3 +9,5 @@ sudachipy>=0.6.8
 SudachiDict-core>=20240409
 deep-translator>=1.11.4
 lemminflect>=0.2.3
+bcrypt>=4.0.0
+pyjwt>=2.8.0

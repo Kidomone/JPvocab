@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     JMDICT_DB_PATH: str = "data/JMdict.db"
     KANJIDIC_DB_PATH: str = "data/kanjidic2.db"
 
+    SECRET_KEY: str = "jpvocab-auth-secret-key"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
     def resolve_db_path(self, path_str: str) -> Path:
         p = Path(path_str)
         if p.is_absolute() and p.exists():

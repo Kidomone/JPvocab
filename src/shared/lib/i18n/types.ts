@@ -55,14 +55,25 @@ export interface Translations {
   wordDeletedSnackbar: string;
   vocabClearedSnackbar: string;
 
-  // Login Page
+  // Login & Registration Page
   loginTitle: string;
+  loginTab: string;
+  registerTab: string;
+  registerTitle: string;
   loginUsernameLabel: string;
+  loginEmailLabel: string;
   loginPasswordLabel: string;
+  loginConfirmPasswordLabel: string;
   loginSubmitBtn: string;
+  registerSubmitBtn: string;
   errUserRequired: string;
   errUserShort: string;
   errUserLong: string;
+  errEmailRequired: string;
+  errEmailInvalid: string;
   errPassRequired: string;
   errPassShort: string;
+  errPassMismatch: string;
+  authErrorDefault: string;
+  navLoginDefault: string;
 }

@@ -1,11 +1,9 @@
-import hashlib
 from typing import List, Optional
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
-
-def _hash_password(password: str) -> str:
-    return hashlib.sha256(f"jpvocab_salt_{password}".encode("utf-8")).hexdigest()
+from app.services.security import get_password_hash
 
 def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
     return db.query(User).filter(User.id == user_id).first()
@@ -16,11 +14,16 @@ def get_user_by_username(db: Session, username: str) -> Optional[User]:
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
+def get_user_by_username_or_email(db: Session, identifier: str) -> Optional[User]:
+    return db.query(User).filter(
+        or_(User.username == identifier, User.email == identifier)
+    ).first()
+
 def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
     return db.query(User).offset(skip).limit(limit).all()
 
 def create_user(db: Session, user_in: UserCreate) -> User:
-    hashed_pwd = _hash_password(user_in.password)
+    hashed_pwd = get_password_hash(user_in.password)
     db_user = User(
         username=user_in.username,
         email=user_in.email,
@@ -37,7 +40,7 @@ def update_user(db: Session, db_user: User, user_in: UserUpdate) -> User:
     if user_in.email is not None:
         db_user.email = user_in.email
     if user_in.password is not None:
-        db_user.password_hash = _hash_password(user_in.password)
+        db_user.password_hash = get_password_hash(user_in.password)
     db.commit()
     db.refresh(db_user)
     return db_user

@@ -2,10 +2,12 @@ import { Box, Typography, Link as MuiLink } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { RED_COLOR } from '../../config';
 import { useTranslation } from '../../lib/i18n';
+import { useAuth } from '../../../features/auth';
 
 export const Header = () => {
   const location = useLocation();
   const { lang, setLang, toggleLang, t } = useTranslation();
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <Box
@@ -80,7 +82,7 @@ export const Header = () => {
             },
           }}
         >
-          Kidomone
+          {isAuthenticated && user ? user.username : t('navLoginDefault')}
         </MuiLink>
 
         <Box
