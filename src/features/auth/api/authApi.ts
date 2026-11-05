@@ -84,3 +84,40 @@ export async function revokeTokenApi(refreshToken: string): Promise<{ message: s
 
   return data as { message: string; revoked: boolean };
 }
+
+export async function logoutApi(refreshToken: string): Promise<{ message: string; revoked: boolean }> {
+  const res = await fetch('/api/auth/logout', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const message = (data && (data.detail || data.message)) || 'Failed to log out';
+    throw new AuthApiError(message, res.status);
+  }
+
+  return data as { message: string; revoked: boolean };
+}
+
+export async function fetchCurrentUserApi(accessToken: string): Promise<AuthResponse['user']> {
+  const res = await fetch('/api/auth/me', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const message = (data && (data.detail || data.message)) || 'Failed to fetch current user';
+    throw new AuthApiError(message, res.status);
+  }
+
+  return data;
+}

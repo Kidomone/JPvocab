@@ -11,7 +11,9 @@ from app.schemas.auth import (
     RevokeTokenRequest,
     RevokeResponse,
 )
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserResponse
+from app.models.user import User
+from app.api.deps import get_current_user
 from app.crud.crud_user import (
     get_user_by_id,
     get_user_by_username,
@@ -44,7 +46,6 @@ def register(
     user_in: RegisterRequest,
     db: Session = Depends(get_db),
 ):
-    # Check if username or email is already taken
     if get_user_by_username(db, user_in.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -56,7 +57,6 @@ def register(
             detail=f"Email '{user_in.email}' is already registered",
         )
 
-    # Create user with bcrypt-hashed password
     new_user = create_user(
         db,
         UserCreate(
@@ -66,12 +66,10 @@ def register(
         ),
     )
 
-    # Issue JWT access token and refresh token with defined lifetimes
     token_payload = {"sub": str(new_user.id), "username": new_user.username}
     access_token, expires_in = create_access_token(token_payload)
     refresh_token, refresh_expires_at = create_refresh_token(token_payload)
 
-    # Persist refresh token in database for lifecycle management
     create_refresh_token_record(
         db=db,
         user_id=new_user.id,
@@ -97,7 +95,6 @@ def login(
     login_in: LoginRequest,
     db: Session = Depends(get_db),
 ):
-    # Lookup by username or email
     user = get_user_by_username_or_email(db, login_in.username.strip())
     if not user:
         raise HTTPException(
@@ -105,8 +102,6 @@ def login(
             detail="Incorrect username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    # Verify password with bcrypt (or legacy fallback)
     if not verify_password(login_in.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -114,12 +109,10 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Issue JWT access token and refresh token
     token_payload = {"sub": str(user.id), "username": user.username}
     access_token, expires_in = create_access_token(token_payload)
     refresh_token, refresh_expires_at = create_refresh_token(token_payload)
 
-    # Persist refresh token in database
     create_refresh_token_record(
         db=db,
         user_id=user.id,
@@ -147,7 +140,6 @@ def refresh_token(
 ):
     token_str = refresh_in.refresh_token.strip()
 
-    # 1. Decode and validate JWT token structure and signature
     try:
         payload = decode_token(token_str)
     except jwt.ExpiredSignatureError:
@@ -163,7 +155,6 @@ def refresh_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 2. Verify token type is 'refresh'
     if payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -188,7 +179,6 @@ def refresh_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 3. Look up token in database to verify existence
     db_token = get_refresh_token(db, token_str)
     if not db_token:
         raise HTTPException(
@@ -197,7 +187,6 @@ def refresh_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 4. Check if token was revoked
     if db_token.revoked:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -205,7 +194,6 @@ def refresh_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 5. Check if token expired according to database record
     now = datetime.now(timezone.utc)
     expires_at = db_token.expires_at
     if expires_at.tzinfo is None:
@@ -217,7 +205,6 @@ def refresh_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 6. Verify user still exists
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
@@ -226,7 +213,6 @@ def refresh_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 7. Issue new access token with full lifetime
     token_payload = {"sub": str(user.id), "username": user.username}
     new_access_token, expires_in = create_access_token(token_payload)
 
@@ -259,3 +245,31 @@ def revoke_token(
         message="Refresh token has been successfully revoked",
         revoked=True,
     )
+
+
+@router.post(
+    "/logout",
+    response_model=RevokeResponse,
+    summary="Log out user and revoke session refresh token",
+)
+def logout(
+    logout_in: RevokeTokenRequest,
+    db: Session = Depends(get_db),
+):
+    token_str = logout_in.refresh_token.strip()
+    revoked = revoke_refresh_token(db, token_str)
+    return RevokeResponse(
+        message="Logged out successfully. Session refresh token revoked." if revoked else "Logged out (session was already ended or token not found).",
+        revoked=revoked,
+    )
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    summary="Get profile of the currently authenticated user",
+)
+def get_current_user_profile(
+    current_user: User = Depends(get_current_user),
+):
+    return current_user

@@ -9,7 +9,7 @@ class WordBase(BaseModel):
     notes: Optional[str] = Field("", description="Custom personal user notes")
 
 class WordCreate(WordBase):
-    user_id: int = Field(..., description="ID of the user who owns this vocabulary item")
+    user_id: Optional[int] = Field(None, description="ID of the user who owns this vocabulary item (defaults to current user)")
 
 class WordUpdate(BaseModel):
     word: Optional[str] = Field(None, min_length=1, max_length=100)

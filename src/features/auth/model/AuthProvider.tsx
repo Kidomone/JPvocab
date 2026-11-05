@@ -4,7 +4,7 @@ import {
   useCallback,
 } from 'react';
 import type { AuthUser, LoginPayload, RegisterPayload } from './types';
-import { loginApi, registerApi, refreshTokenApi } from '../api/authApi';
+import { loginApi, registerApi, refreshTokenApi, logoutApi } from '../api/authApi';
 import { authStorage } from './authStorage';
 import { AuthContext } from './context';
 
@@ -34,7 +34,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const refreshToken = authStorage.getRefreshToken();
+    if (refreshToken) {
+      try {
+        await logoutApi(refreshToken);
+      } catch (err) {
+        console.warn('Server session revocation notice:', err);
+      }
+    }
     authStorage.clearAuth();
     setUser(null);
   }, []);

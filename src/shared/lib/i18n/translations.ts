@@ -4,6 +4,7 @@ export const translations: Record<'ru' | 'en', Translations> = {
   ru: {
     navVocab: 'Мой Словарь',
     navLogin: 'Kidomone',
+    navLogout: 'Выйти',
     langSwitch: 'EN',
 
     homeTitle: 'Введите текст',
@@ -76,6 +77,7 @@ export const translations: Record<'ru' | 'en', Translations> = {
   en: {
     navVocab: 'My Dictionary',
     navLogin: 'Kidomone',
+    navLogout: 'Logout',
     langSwitch: 'RU',
 
     homeTitle: 'Enter text',

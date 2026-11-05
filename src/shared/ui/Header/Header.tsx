@@ -7,7 +7,7 @@ import { useAuth } from '../../../features/auth';
 export const Header = () => {
   const location = useLocation();
   const { lang, setLang, toggleLang, t } = useTranslation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <Box
@@ -66,24 +66,70 @@ export const Header = () => {
           {t('navVocab')}
         </MuiLink>
 
-        <MuiLink
-          component={RouterLink}
-          to="/login"
-          sx={{
-            color: '#FFFFFF',
-            fontSize: '0.95rem',
-            fontWeight: 500,
-            textDecoration: location.pathname === '/login' ? 'underline' : 'none',
-            textUnderlineOffset: '4px',
-            transition: 'opacity 0.2s',
-            '&:hover': {
-              opacity: 0.85,
-              textDecoration: 'underline',
-            },
-          }}
-        >
-          {isAuthenticated && user ? user.username : t('navLoginDefault')}
-        </MuiLink>
+        {isAuthenticated && user ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <MuiLink
+              component={RouterLink}
+              to="/login"
+              sx={{
+                color: '#FFFFFF',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                textDecoration: location.pathname === '/login' ? 'underline' : 'none',
+                textUnderlineOffset: '4px',
+                transition: 'opacity 0.2s',
+                '&:hover': {
+                  opacity: 0.85,
+                  textDecoration: 'underline',
+                },
+              }}
+            >
+              {user.username}
+            </MuiLink>
+            <Box
+              component="button"
+              onClick={() => logout()}
+              sx={{
+                background: 'rgba(0, 0, 0, 0.28)',
+                border: '1px solid rgba(255, 255, 255, 0.4)',
+                color: '#FFFFFF',
+                borderRadius: '6px',
+                px: 1.2,
+                py: 0.35,
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  background: 'rgba(0, 0, 0, 0.45)',
+                  borderColor: '#FFFFFF',
+                },
+              }}
+              title={t('navLogout')}
+            >
+              {t('navLogout')}
+            </Box>
+          </Box>
+        ) : (
+          <MuiLink
+            component={RouterLink}
+            to="/login"
+            sx={{
+              color: '#FFFFFF',
+              fontSize: '0.95rem',
+              fontWeight: 500,
+              textDecoration: location.pathname === '/login' ? 'underline' : 'none',
+              textUnderlineOffset: '4px',
+              transition: 'opacity 0.2s',
+              '&:hover': {
+                opacity: 0.85,
+                textDecoration: 'underline',
+              },
+            }}
+          >
+            {t('navLoginDefault')}
+          </MuiLink>
+        )}
 
         <Box
           onClick={toggleLang}

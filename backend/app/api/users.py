@@ -2,7 +2,9 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
+from app.api.deps import get_current_user
 from app.crud.crud_user import (
     get_user_by_id,
     get_user_by_username,
@@ -16,7 +18,7 @@ from app.crud.crud_user import (
 router = APIRouter()
 
 
-@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Public user registration")
 def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     if get_user_by_username(db, user_in.username):
         raise HTTPException(
@@ -31,13 +33,32 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     return create_user(db, user_in)
 
 
-@router.get("/", response_model=List[UserResponse])
-def list_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+@router.get("/me", response_model=UserResponse, summary="Get current authenticated user profile")
+def get_current_user_profile(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.get("/", response_model=List[UserResponse], summary="List users (requires authentication)")
+def list_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     return get_users(db, skip=skip, limit=limit)
 
 
-@router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+@router.get("/{user_id}", response_model=UserResponse, summary="Get user profile (checks ownership)")
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this user's profile",
+        )
     db_user = get_user_by_id(db, user_id)
     if not db_user:
         raise HTTPException(
@@ -47,8 +68,18 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.patch("/{user_id}", response_model=UserResponse)
-def modify_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)):
+@router.patch("/{user_id}", response_model=UserResponse, summary="Modify user profile (checks ownership)")
+def modify_user(
+    user_id: int,
+    user_in: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to modify this user's profile",
+        )
     db_user = get_user_by_id(db, user_id)
     if not db_user:
         raise HTTPException(
@@ -70,8 +101,17 @@ def modify_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)
     return update_user(db, db_user, user_in)
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remove_user(user_id: int, db: Session = Depends(get_db)):
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete user account (checks ownership)")
+def remove_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this user",
+        )
     db_user = get_user_by_id(db, user_id)
     if not db_user:
         raise HTTPException(

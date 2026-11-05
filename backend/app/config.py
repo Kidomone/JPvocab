@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     JMDICT_DB_PATH: str = "data/JMdict.db"
     KANJIDIC_DB_PATH: str = "data/kanjidic2.db"
 
-    SECRET_KEY: str = "jpvocab-auth-secret-key"
+    SECRET_KEY: str = "jpvocab-auth-super-secret-key-at-least-32-bytes-2026"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

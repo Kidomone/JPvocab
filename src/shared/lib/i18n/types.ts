@@ -4,6 +4,7 @@ export interface Translations {
   // Navigation / Header
   navVocab: string;
   navLogin: string;
+  navLogout: string;
   langSwitch: string;
 
   // Home Page

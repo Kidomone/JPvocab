@@ -29,7 +29,7 @@ export interface LoginFormErrors {
 
 export const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const { t } = useTranslation();
-  const { login, register, isLoading } = useAuth();
+  const { user, isAuthenticated, login, register, logout, isLoading } = useAuth();
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [usernameInput, setUsernameInput] = useState('');
@@ -38,6 +38,93 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [errors, setErrors] = useState<LoginFormErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
+
+  if (isAuthenticated && user) {
+    return (
+      <Grow in timeout={450}>
+        <Paper
+          elevation={6}
+          sx={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: 420,
+            p: { xs: 3.5, sm: 4.5 },
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
+          }}
+        >
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              fontSize: '1.65rem',
+              color: '#1a1a1a',
+              textAlign: 'center',
+              mb: 0.5,
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            {user.username}
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: '0.92rem',
+              color: '#666666',
+              mb: 3,
+            }}
+          >
+            {user.email}
+          </Typography>
+
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => logout()}
+              sx={{
+                backgroundColor: '#000000',
+                color: '#FFFFFF',
+                borderRadius: '6px',
+                py: 1,
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#222222',
+                },
+              }}
+            >
+              {t('navLogout')}
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={onSuccess}
+              sx={{
+                borderColor: '#000000',
+                color: '#000000',
+                borderRadius: '6px',
+                py: 1,
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: 'rgba(0,0,0,0.05)',
+                  borderColor: '#000000',
+                },
+              }}
+            >
+              {t('toHomeBtn')}
+            </Button>
+          </Box>
+        </Paper>
+      </Grow>
+    );
+  }
 
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
