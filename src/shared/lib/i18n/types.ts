@@ -77,4 +77,6 @@ export interface Translations {
   errPassMismatch: string;
   authErrorDefault: string;
   navLoginDefault: string;
+  wordNotFoundInDb: string;
+  loginRequiredToSave: string;
 }

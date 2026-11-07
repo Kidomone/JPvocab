@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import threading
+from functools import lru_cache
 from typing import Dict, List, Optional
 from app.config import settings
 from app.services.lemmatizer import get_english_candidate_stems
@@ -18,20 +20,29 @@ SUDACHI_TO_JMDICT_POS = {
     "接尾辞": ["suf"],
 }
 
+_local = threading.local()
+
 
 def _get_jmdict_connection() -> Optional[sqlite3.Connection]:
-    path = settings.jmdict_path
-    if path.exists():
-        return sqlite3.connect(str(path))
-    return None
+    conn = getattr(_local, "jmdict_conn", None)
+    if conn is None:
+        path = settings.jmdict_path
+        if path.exists():
+            clean_path = str(path).replace("\\", "/")
+            conn = sqlite3.connect(f"file:///{clean_path}?mode=ro", uri=True, check_same_thread=False)
+            _local.jmdict_conn = conn
+    return conn
 
 
 def _get_kanjidic_connection() -> Optional[sqlite3.Connection]:
-    path = settings.kanjidic_path
-    if path.exists():
-        return sqlite3.connect(str(path))
-    return None
-
+    conn = getattr(_local, "kanjidic_conn", None)
+    if conn is None:
+        path = settings.kanjidic_path
+        if path.exists():
+            clean_path = str(path).replace("\\", "/")
+            conn = sqlite3.connect(f"file:///{clean_path}?mode=ro", uri=True, check_same_thread=False)
+            _local.kanjidic_conn = conn
+    return conn
 
 
 def is_kanji(char: str) -> bool:
@@ -42,53 +53,66 @@ def has_kanji(text: str) -> bool:
     return any(is_kanji(c) for c in text)
 
 
-def get_kanji_breakdown(text: str) -> List[Dict[str, str]]:
+@lru_cache(maxsize=2048)
+def _get_single_kanji_info(char: str) -> Optional[Dict[str, str]]:
     conn = _get_kanjidic_connection()
     if not conn:
-        return []
-
-    results = []
-    seen = set()
+        return None
     try:
         cursor = conn.cursor()
-        for char in text:
-            if is_kanji(char) and char not in seen:
-                seen.add(char)
-                cursor.execute(
-                    "SELECT meaning FROM meanings WHERE kanji_literal = ? AND (lang IS NULL OR lang = 'en') LIMIT 3",
-                    (char,)
-                )
-                meanings = [row[0] for row in cursor.fetchall()]
-                meaning_str = ", ".join(meanings) if meanings else ""
+        cursor.execute(
+            "SELECT meaning FROM meanings WHERE kanji_literal = ? AND (lang IS NULL OR lang = 'en') LIMIT 3",
+            (char,)
+        )
+        meanings = [row[0] for row in cursor.fetchall()]
+        meaning_str = ", ".join(meanings) if meanings else ""
 
-                cursor.execute(
-                    "SELECT reading FROM readings WHERE kanji_literal = ? AND reading_type IN ('ja_on', 'ja_kun') LIMIT 4",
-                    (char,)
-                )
-                readings = [row[0] for row in cursor.fetchall()]
-                readings_str = ", ".join(readings) if readings else ""
+        cursor.execute(
+            "SELECT reading FROM readings WHERE kanji_literal = ? AND reading_type IN ('ja_on', 'ja_kun') LIMIT 4",
+            (char,)
+        )
+        readings = [row[0] for row in cursor.fetchall()]
+        readings_str = ", ".join(readings) if readings else ""
 
-                results.append({
-                    "kanji": char,
-                    "meaning": meaning_str,
-                    "readings": readings_str,
-                })
+        return {
+            "kanji": char,
+            "meaning": meaning_str,
+            "readings": readings_str,
+        }
     except Exception:
-        pass
-    finally:
-        conn.close()
+        return None
 
+
+def get_kanji_breakdown(text: str) -> List[Dict[str, str]]:
+    results = []
+    seen = set()
+    for char in text:
+        if is_kanji(char) and char not in seen:
+            seen.add(char)
+            info = _get_single_kanji_info(char)
+            if info:
+                results.append(dict(info))
     return results
 
 
-def search_japanese_word(word: str, pos_hint: Optional[str] = None) -> Optional[Dict]:
+def _search_japanese_word_internal(word: str, pos_hint: Optional[str] = None) -> Optional[Dict]:
     conn = _get_jmdict_connection()
     if not conn:
         return None
 
     try:
         cursor = conn.cursor()
-        query = """
+        cursor.execute(
+            "SELECT id_entry FROM k_ele WHERE keb = ? UNION SELECT id_entry FROM r_ele WHERE reb = ?",
+            (word, word)
+        )
+        entry_rows = cursor.fetchall()
+        if not entry_rows:
+            return None
+
+        entry_ids = [r[0] for r in entry_rows]
+        placeholders = ",".join("?" for _ in entry_ids)
+        query = f"""
         SELECT DISTINCT
             e.id AS entry_id,
             k.keb AS kanji,
@@ -102,10 +126,10 @@ def search_japanese_word(word: str, pos_hint: Optional[str] = None) -> Optional[
         LEFT JOIN sense_pos sp ON s.id = sp.id_sense
         LEFT JOIN pos p ON sp.id_pos = p.id
         LEFT JOIN gloss g ON s.id = g.id_sense
-        WHERE (k.keb = ? OR r.reb = ?)
+        WHERE e.id IN ({placeholders})
           AND (g.id_lang = '1' OR g.id_lang IS NULL OR g.id_lang = 'eng')
         """
-        cursor.execute(query, (word, word))
+        cursor.execute(query, entry_ids)
         rows = cursor.fetchall()
         if not rows:
             return None
@@ -160,8 +184,13 @@ def search_japanese_word(word: str, pos_hint: Optional[str] = None) -> Optional[
         }
     except Exception:
         return None
-    finally:
-        conn.close()
+
+
+@lru_cache(maxsize=4096)
+def search_japanese_word(word: str, pos_hint: Optional[str] = None) -> Optional[Dict]:
+    res = _search_japanese_word_internal(word, pos_hint)
+    return dict(res) if res else None
+
 
 
 ENGLISH_PRONOUNS_MAP = {
@@ -258,10 +287,27 @@ def search_english_word(keyword: str, limit: int = 10, context_words: Optional[s
             variations.append(f"to become {s}")
 
         unique_vars = list(dict.fromkeys(variations))
-        placeholders = ", ".join(["?"] * len(unique_vars))
 
-        like_stems = stems[:4]
-        like_clauses = " OR ".join(["g.content LIKE ? COLLATE NOCASE" for _ in like_stems])
+        # 1. Fast indexed lookup via UNION ALL on idx_gloss_content_nocase
+        subqueries = " UNION ALL ".join(["SELECT id_sense, content FROM gloss WHERE content = ? COLLATE NOCASE" for _ in unique_vars])
+        cursor.execute(subqueries, unique_vars)
+        sense_rows = cursor.fetchall()
+
+        # 2. If few results, supplement with index range search on stems
+        if len(sense_rows) < limit:
+            for s in stems[:2]:
+                cursor.execute(
+                    "SELECT id_sense, content FROM gloss WHERE content >= ? COLLATE NOCASE AND content < ? COLLATE NOCASE LIMIT 25",
+                    (f"{s} ", f"{s}!")
+                )
+                sense_rows.extend(cursor.fetchall())
+
+        if not sense_rows:
+            return []
+
+        sense_ids = list(dict.fromkeys([r[0] for r in sense_rows]))[:limit * 6]
+        placeholders = ",".join("?" for _ in sense_ids)
+
         query = f"""
         SELECT DISTINCT
             e.id AS entry_id,
@@ -269,46 +315,21 @@ def search_english_word(keyword: str, limit: int = 10, context_words: Optional[s
             r.reb AS reading,
             g.content AS translation,
             CASE WHEN pr.id_entry IS NOT NULL THEN 1 ELSE 0 END AS is_common
-        FROM gloss g
-        JOIN sense s ON g.id_sense = s.id
+        FROM sense s
         JOIN entry e ON s.id_entry = e.id
+        JOIN gloss g ON s.id = g.id_sense
         LEFT JOIN k_ele k ON e.id = k.id_entry
         LEFT JOIN r_ele r ON e.id = r.id_entry
         LEFT JOIN pri pr ON e.id = pr.id_entry
-        WHERE (g.content IN ({placeholders}) COLLATE NOCASE OR {like_clauses})
+        WHERE s.id IN ({placeholders})
           AND (g.id_lang = '1' OR g.id_lang IS NULL OR g.id_lang = 'eng')
           AND (k.keb IS NOT NULL OR r.reb IS NOT NULL)
         ORDER BY is_common DESC, (k.keb IS NOT NULL) DESC
         LIMIT ?
         """
-        like_patterns = [f"{s} (%" for s in like_stems]
-        params = list(unique_vars) + like_patterns + [limit * 15]
-        cursor.execute(query, params)
+        cursor.execute(query, sense_ids + [limit * 15])
         rows = cursor.fetchall()
 
-        if len(rows) < 3 and len(clean_keyword) >= 4:
-            pattern = f"{clean_keyword}%"
-            fallback_query = """
-            SELECT DISTINCT
-                e.id AS entry_id,
-                k.keb AS kanji,
-                r.reb AS reading,
-                g.content AS translation,
-                CASE WHEN pr.id_entry IS NOT NULL THEN 1 ELSE 0 END AS is_common
-            FROM gloss g
-            JOIN sense s ON g.id_sense = s.id
-            JOIN entry e ON s.id_entry = e.id
-            LEFT JOIN k_ele k ON e.id = k.id_entry
-            LEFT JOIN r_ele r ON e.id = r.id_entry
-            LEFT JOIN pri pr ON e.id = pr.id_entry
-            WHERE g.content LIKE ? COLLATE NOCASE
-              AND (g.id_lang = '1' OR g.id_lang IS NULL OR g.id_lang = 'eng')
-              AND (k.keb IS NOT NULL OR r.reb IS NOT NULL)
-            ORDER BY is_common DESC
-            LIMIT ?
-            """
-            cursor.execute(fallback_query, (pattern, limit * 5))
-            rows.extend(cursor.fetchall())
 
         grouped: Dict[tuple, Dict] = {}
         for entry_id, kanji, reading, translation, is_common in rows:
@@ -352,7 +373,6 @@ def search_english_word(keyword: str, limit: int = 10, context_words: Optional[s
             })
     except Exception:
         pass
-    finally:
-        conn.close()
 
     return results
+

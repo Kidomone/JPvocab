@@ -3,8 +3,6 @@ import { Box, Fade, Snackbar, Alert } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import { Layout, useTranslation } from '../../../shared';
 import {
-  DEFAULT_SENTENCE,
-  TODAY_WORD_DETAIL,
   analyzeSentenceApi,
   SentenceTokens,
   SentenceTranslation,
@@ -20,13 +18,13 @@ import { AnalyzeSentenceForm, AddToVocabButton } from '../../../features';
 export const ResultPage = () => {
   const { t, lang } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const rawText = searchParams.get('text') ?? DEFAULT_SENTENCE;
+  const rawText = searchParams.get('text') ?? '';
 
-  const [activeWord, setActiveWord] = useState<WordDetail>(TODAY_WORD_DETAIL);
+  const [activeWord, setActiveWord] = useState<WordDetail | null>(null);
   const [selectedTokenId, setSelectedTokenId] = useState<string>('1');
   const [prevRawText, setPrevRawText] = useState(rawText);
   const [prevLang, setPrevLang] = useState(lang);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(Boolean(rawText.trim()));
   const [analysisResult, setAnalysisResult] = useState<AnalyzeSentenceResult | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -34,10 +32,17 @@ export const ResultPage = () => {
   if (rawText !== prevRawText || lang !== prevLang) {
     setPrevRawText(rawText);
     setPrevLang(lang);
-    setIsLoading(true);
+    setIsLoading(Boolean(rawText.trim()));
   }
 
   useEffect(() => {
+    if (!rawText.trim()) {
+      setIsLoading(false);
+      setAnalysisResult(null);
+      setActiveWord(null);
+      return;
+    }
+
     if (!isLoading) return;
 
     let isMounted = true;
@@ -51,7 +56,7 @@ export const ResultPage = () => {
           const firstWithDetail = res.tokens.find((t) => t.detail);
           const selected = matchingToken || firstWithDetail || res.tokens[0];
           setSelectedTokenId(selected.id);
-          setActiveWord(selected.detail || TODAY_WORD_DETAIL);
+          setActiveWord(selected.detail || null);
         }
       })
       .catch((err) => {
@@ -85,10 +90,6 @@ export const ResultPage = () => {
     }
   };
 
-  const handleResetDefault = () => {
-    setSearchParams({ text: DEFAULT_SENTENCE });
-  };
-
   const handleWordAdded = (word: WordDetail) => {
     const msg = lang === 'en'
       ? `Word "${word.word}" added to dictionary`
@@ -104,7 +105,7 @@ export const ResultPage = () => {
       <Box
         sx={{
           flex: 1,
-          px: { xs: 3, sm: 6, md: 10 },
+          px: { xs: 2, sm: 4, md: 6 },
           py: 4,
           display: 'flex',
           flexDirection: 'column',
@@ -117,7 +118,7 @@ export const ResultPage = () => {
           isLoading={isLoading}
           placeholder={t('resultInputPlaceholder')}
           ariaLabel={t('homeInputAria')}
-          containerSx={{ mb: 8, mt: 4 }}
+          containerSx={{ mb: 7, mt: 3, maxWidth: 880 }}
         />
 
         {/* Content States */}
@@ -125,12 +126,12 @@ export const ResultPage = () => {
           <Box
             sx={{
               width: '100%',
-              maxWidth: 1050,
+              maxWidth: 1220,
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               justifyContent: 'space-between',
               alignItems: { xs: 'center', md: 'flex-start' },
-              gap: { xs: 5, md: 8 },
+              gap: { xs: 4, md: 6 },
             }}
           >
             <SentenceSkeleton />
@@ -140,8 +141,13 @@ export const ResultPage = () => {
           <Fade in timeout={350}>
             <Box>
               <SentenceEmptyState
-                message={t('noDataDesc')}
-                onReset={handleResetDefault}
+                message={
+                  !rawText.trim()
+                    ? (lang === 'en'
+                        ? 'No sentence specified. Please enter a sentence to analyze.'
+                        : 'Текст для разбора не указан. Пожалуйста, введите предложение выше.')
+                    : t('noDataDesc')
+                }
               />
             </Box>
           </Fade>
@@ -150,12 +156,12 @@ export const ResultPage = () => {
             <Box
               sx={{
                 width: '100%',
-                maxWidth: 1050,
+                maxWidth: 1220,
                 display: 'flex',
                 flexDirection: { xs: 'column', md: 'row' },
                 justifyContent: 'space-between',
                 alignItems: { xs: 'center', md: 'flex-start' },
-                gap: { xs: 5, md: 8 },
+                gap: { xs: 4, md: 6 },
               }}
             >
               {/* Left Column */}
@@ -171,9 +177,10 @@ export const ResultPage = () => {
                 <SentenceTokens
                   tokens={tokens}
                   selectedTokenId={selectedTokenId}
-                  activeWord={activeWord}
+                  activeWord={activeWord || undefined}
                   onTokenClick={handleTokenClick}
                 />
+
 
                 <SentenceTranslation
                   text={rawText}
@@ -187,7 +194,8 @@ export const ResultPage = () => {
               {/* Right Column */}
               <WordCard
                 wordDetail={activeWord}
-                actionSlot={<AddToVocabButton word={activeWord} onAdd={handleWordAdded} />}
+                isLoading={isLoading}
+                actionSlot={activeWord ? <AddToVocabButton word={activeWord} onAdd={handleWordAdded} /> : null}
               />
             </Box>
           </Fade>

@@ -5,29 +5,20 @@ import type { WordDetail } from '../model/types';
 import { KanjiBreakdown } from './KanjiBreakdown';
 
 export interface WordCardProps {
-  wordDetail: WordDetail;
+  wordDetail?: WordDetail | null;
   actionSlot?: ReactNode;
   isLoading?: boolean;
 }
 
 export const WordCard = ({ wordDetail, actionSlot, isLoading = false }: WordCardProps) => {
-  const { lang } = useTranslation();
-  const hasComponents = wordDetail.components && wordDetail.components.length > 0;
+  const { lang, t } = useTranslation();
 
-  const formatMeaning = (meaning: string) => {
-    if (!meaning) return '';
-    if (lang === 'en') {
-      return meaning.replace(/^значение:\s*/i, 'definition of ');
-    }
-    return meaning.replace(/^definition of\s*/i, 'значение: ');
-  };
-
-  if (isLoading) {
+  if (isLoading || !wordDetail) {
     return (
       <Box
         sx={{
           width: '100%',
-          maxWidth: 380,
+          maxWidth: { xs: '100%', md: 440 },
           backgroundColor: RED_COLOR,
           color: '#FFFFFF',
           borderRadius: '16px',
@@ -46,11 +37,22 @@ export const WordCard = ({ wordDetail, actionSlot, isLoading = false }: WordCard
     );
   }
 
+  const hasComponents = wordDetail.components && wordDetail.components.length > 0;
+  const isNotFound = Boolean(wordDetail.notFound || !wordDetail.meaning || !wordDetail.meaning.trim());
+
+  const formatMeaning = (meaning: string) => {
+    if (!meaning) return '';
+    if (lang === 'en') {
+      return meaning.replace(/^значение:\s*/i, '');
+    }
+    return meaning.replace(/^definition of\s*/i, '');
+  };
   return (
+
     <Box
       sx={{
         width: '100%',
-        maxWidth: 380,
+        maxWidth: { xs: '100%', md: 440 },
         backgroundColor: RED_COLOR,
         color: '#FFFFFF',
         borderRadius: '16px',
@@ -70,7 +72,7 @@ export const WordCard = ({ wordDetail, actionSlot, isLoading = false }: WordCard
             <Box
               sx={{
                 display: 'flex',
-                alignItems: 'baseline',
+                alignItems: 'flex-start',
                 justifyContent: 'space-between',
                 gap: 2,
                 mb: 0.5,
@@ -81,30 +83,60 @@ export const WordCard = ({ wordDetail, actionSlot, isLoading = false }: WordCard
                 sx={{
                   fontFamily: "'Noto Sans JP', sans-serif",
                   fontWeight: 700,
-                  fontSize: '2.1rem',
-                  lineHeight: 1.1,
+                  fontSize: wordDetail.word.length > 5 ? '1.75rem' : '2.05rem',
+                  lineHeight: 1.15,
+                  flexShrink: 0,
                 }}
               >
                 {wordDetail.word}
               </Typography>
-              <Typography
-                component="span"
-                sx={{
-                  fontWeight: 700,
-                  fontSize: '1.35rem',
-                  textAlign: 'right',
-                }}
-              >
-                {formatMeaning(wordDetail.meaning)}
-              </Typography>
+
+              {isNotFound ? (
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.24)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: '6px',
+                    px: 1.25,
+                    py: 0.4,
+                    textAlign: 'right',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '0.82rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {t('wordNotFoundInDb')}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography
+                  component="span"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '1.18rem',
+                    textAlign: 'right',
+                    lineHeight: 1.3,
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {formatMeaning(wordDetail.meaning)}
+                </Typography>
+              )}
             </Box>
 
             {/* Readings */}
             <Typography
               sx={{
                 fontSize: '0.9rem',
-                color: 'rgba(255, 255, 255, 0.9)',
+                color: 'rgba(255, 255, 255, 0.88)',
                 fontFamily: "'Noto Sans JP', sans-serif",
+                mt: 0.5,
               }}
             >
               {wordDetail.reading}

@@ -9,6 +9,13 @@ export class AuthApiError extends Error {
   }
 }
 
+function extractErrorMessage(res: Response, data: any, defaultMsg: string): string {
+  if (res.status === 502 || res.status === 503 || res.status === 504) {
+    return 'Сервер бэкенда недоступен (убедитесь, что запущен uvicorn на порту 8000)';
+  }
+  return (data && (data.detail || data.message)) || defaultMsg;
+}
+
 export async function loginApi(payload: LoginPayload): Promise<AuthResponse> {
   const res = await fetch('/api/auth/login', {
     method: 'POST',
@@ -21,7 +28,7 @@ export async function loginApi(payload: LoginPayload): Promise<AuthResponse> {
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const message = (data && (data.detail || data.message)) || 'Login failed';
+    const message = extractErrorMessage(res, data, 'Login failed');
     throw new AuthApiError(message, res.status);
   }
 
@@ -40,7 +47,7 @@ export async function registerApi(payload: RegisterPayload): Promise<AuthRespons
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const message = (data && (data.detail || data.message)) || 'Registration failed';
+    const message = extractErrorMessage(res, data, 'Registration failed');
     throw new AuthApiError(message, res.status);
   }
 
@@ -59,7 +66,7 @@ export async function refreshTokenApi(refreshToken: string): Promise<AuthRespons
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const message = (data && (data.detail || data.message)) || 'Failed to refresh token';
+    const message = extractErrorMessage(res, data, 'Failed to refresh token');
     throw new AuthApiError(message, res.status);
   }
 

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@mui/material';
-import { addWordToVocab, isWordSaved } from '../../../entities/vocab';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { addWordApi } from '../../../entities/vocab';
 import type { WordDetail } from '../../../entities/word';
 import { useTranslation } from '../../../shared';
+import { useAuth } from '../../../features/auth';
 
 export interface AddToVocabButtonProps {
   word?: WordDetail;
@@ -11,25 +13,43 @@ export interface AddToVocabButtonProps {
 
 export const AddToVocabButton = ({ word, onAdd }: AddToVocabButtonProps) => {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [prevWordKey, setPrevWordKey] = useState<string | undefined>(word?.word);
-  const [isSaved, setIsSaved] = useState<boolean>(() => (word ? isWordSaved(word.word) : false));
+  const [isSaved, setIsSaved] = useState<boolean>(false);
   const [justAdded, setJustAdded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (word?.word !== prevWordKey) {
     setPrevWordKey(word?.word);
-    setIsSaved(word ? isWordSaved(word.word) : false);
+    setIsSaved(false);
     setJustAdded(false);
   }
 
-  const handleAdd = () => {
-    if (!word) return;
-    addWordToVocab(word);
-    setIsSaved(true);
-    setJustAdded(true);
-    onAdd?.(word);
-    setTimeout(() => {
-      setJustAdded(false);
-    }, 2200);
+  const handleAdd = async () => {
+    if (!word || isSubmitting) return;
+
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: location.pathname + location.search } });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await addWordApi(word);
+      setIsSaved(true);
+      setJustAdded(true);
+      onAdd?.(word);
+      setTimeout(() => {
+        setJustAdded(false);
+      }, 2200);
+    } catch (err) {
+      console.error('Failed to add word to backend server:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getButtonLabel = () => {
@@ -44,6 +64,7 @@ export const AddToVocabButton = ({ word, onAdd }: AddToVocabButtonProps) => {
     <Button
       variant="contained"
       onClick={handleAdd}
+      disabled={isSubmitting}
       sx={{
         backgroundColor: isHighlighted ? '#FFFFFF' : '#000000',
         color: isHighlighted ? '#111111' : '#FFFFFF',

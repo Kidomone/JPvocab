@@ -46,7 +46,7 @@ export const KanjiBreakdown = ({ components }: KanjiBreakdownProps) => {
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'baseline',
+              alignItems: 'flex-start',
               justifyContent: 'space-between',
               gap: 2,
             }}
@@ -56,8 +56,9 @@ export const KanjiBreakdown = ({ components }: KanjiBreakdownProps) => {
               sx={{
                 fontFamily: "'Noto Sans JP', sans-serif",
                 fontWeight: 700,
-                fontSize: '1.65rem',
+                fontSize: '1.45rem',
                 lineHeight: 1.2,
+                flexShrink: 0,
               }}
             >
               {comp.kanji}
@@ -66,8 +67,10 @@ export const KanjiBreakdown = ({ components }: KanjiBreakdownProps) => {
               component="span"
               sx={{
                 fontWeight: 600,
-                fontSize: '1.15rem',
+                fontSize: '1.05rem',
                 textAlign: 'right',
+                lineHeight: 1.3,
+                wordBreak: 'break-word',
               }}
             >
               {formatMeaning(comp.meaning)}

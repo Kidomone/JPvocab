@@ -1,7 +1,6 @@
 import { Box, Typography, Fade } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Layout, useTranslation } from '../../../shared';
-import { DEFAULT_SENTENCE } from '../../../entities';
 import { AnalyzeSentenceForm } from '../../../features';
 
 export const HomePage = () => {
@@ -9,8 +8,10 @@ export const HomePage = () => {
   const { t } = useTranslation();
 
   const handleAnalyze = (query: string) => {
-    const target = query.trim() || DEFAULT_SENTENCE;
-    navigate(`/result?text=${encodeURIComponent(target)}`);
+    const target = query.trim();
+    if (target) {
+      navigate(`/result?text=${encodeURIComponent(target)}`);
+    }
   };
 
   return (

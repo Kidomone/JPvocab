@@ -9,4 +9,5 @@ export interface WordDetail {
   reading: string;
   meaning: string;
   components: KanjiComponent[];
+  notFound?: boolean;
 }

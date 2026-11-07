@@ -1,5 +1,5 @@
 export * from './model/types';
-export * from './model/mockData';
+
 export * from './lib/parseSentence';
 export * from './api/analyzeApi';
 export * from './ui/SentenceTokens';

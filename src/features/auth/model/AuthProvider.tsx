@@ -1,5 +1,6 @@
 import {
   useState,
+  useEffect,
   type ReactNode,
   useCallback,
 } from 'react';
@@ -11,6 +12,25 @@ import { AuthContext } from './context';
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(() => authStorage.getUser());
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Silent session renewal
+  useEffect(() => {
+    const refreshToken = authStorage.getRefreshToken();
+    if (!refreshToken) return;
+    refreshTokenApi(refreshToken)
+      .then((response) => {
+        authStorage.saveAuth(response);
+        setUser(response.user);
+      })
+      .catch((err: any) => {
+        if (err?.status === 401) {
+          authStorage.clearAuth();
+          setUser(null);
+        } else {
+          console.debug('Silent session renewal check postponed:', err);
+        }
+      });
+  }, []);
 
   const login = useCallback(async (payload: LoginPayload) => {
     setIsLoading(true);

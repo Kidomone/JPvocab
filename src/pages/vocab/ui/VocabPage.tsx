@@ -1,11 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Fade, Snackbar, Alert, Button } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Fade,
+  Snackbar,
+  Alert,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  CircularProgress,
+} from '@mui/material';
 import { Layout, RED_COLOR, useTranslation } from '../../../shared';
 import {
-  loadVocabList,
-  updateWordNotes,
-  removeWordFromVocab,
-  clearVocab,
+  fetchUserWordsApi,
+  updateWordNotesApi,
+  deleteWordApi,
+  addCustomWordApi,
   VocabTable,
   VocabEmptyState,
   VocabSearchEmptyState,
@@ -20,40 +33,141 @@ export const VocabPage = () => {
   const [vocabList, setVocabList] = useState<VocabItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
+  // Add word dialog state
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [wordInput, setWordInput] = useState('');
+  const [readingInput, setReadingInput] = useState('');
+  const [meaningInput, setMeaningInput] = useState('');
+  const [notesInput, setNotesInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVocabList(loadVocabList());
-      setIsLoading(false);
-    }, 200);
+    let isMounted = true;
+    setIsLoading(true);
+    setFetchError(null);
+    fetchUserWordsApi()
+      .then((serverWords) => {
+        if (!isMounted) return;
+        setVocabList(serverWords);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.error('Backend words fetch failed:', err);
+        const errMsg = String(err?.message || '');
+        const isAuthError = errMsg.includes('401') || errMsg.includes('403');
+        if (isAuthError) {
+          window.location.href = '/login';
+          return;
+        }
+        setFetchError(
+          lang === 'en'
+            ? 'Failed to connect to server. Please check your connection.'
+            : 'Не удалось связаться с сервером. Пожалуйста, проверьте соединение.'
+        );
+        setVocabList([]);
+        setIsLoading(false);
+      });
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      isMounted = false;
+    };
+  }, [lang]);
 
-  const handleNoteChange = (id: number, val: string) => {
-    const updated = updateWordNotes(id, val);
-    setVocabList(updated);
+  const handleOpenAdd = () => {
+    setWordInput('');
+    setReadingInput('');
+    setMeaningInput('');
+    setNotesInput('');
+    setAddError(null);
+    setIsAddOpen(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleCloseAdd = () => {
+    if (isSubmitting) return;
+    setIsAddOpen(false);
+    setAddError(null);
+  };
+
+  const handleSaveNewWord = async () => {
+    const trimmedWord = wordInput.trim();
+    if (!trimmedWord) {
+      setAddError(lang === 'en' ? 'Word is required' : 'Введите слово');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setAddError(null);
+
+    try {
+      const createdItem = await addCustomWordApi({
+        word: trimmedWord,
+        reading: readingInput.trim(),
+        meaning: meaningInput.trim(),
+        notes: notesInput.trim(),
+      });
+
+      setVocabList((prev) => [createdItem, ...prev.filter((item) => item.id !== createdItem.id)]);
+      setIsAddOpen(false);
+
+      const msg = lang === 'en'
+        ? `Word "${createdItem.word}" added to dictionary`
+        : `Слово «${createdItem.word}» добавлено в словарь`;
+      setSnackbarMessage(msg);
+      setSnackbarOpen(true);
+    } catch (err: any) {
+      setAddError(err?.message || (lang === 'en' ? 'Failed to add word' : 'Ошибка добавления слова'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+  const handleNoteChange = async (id: number, val: string) => {
+    try {
+      await updateWordNotesApi(id, val);
+      setVocabList((prev) => prev.map((item) => (item.id === id ? { ...item, notes: val } : item)));
+    } catch (err) {
+      console.error('Server note update failed:', err);
+      setSnackbarMessage(lang === 'en' ? 'Failed to update note on server' : 'Ошибка сохранения заметки на сервере');
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
     const itemToDelete = vocabList.find((i) => i.id === id);
-    const updated = removeWordFromVocab(id);
-    setVocabList(updated);
-    const msg = itemToDelete
-      ? (lang === 'en' ? `Word "${itemToDelete.word}" removed` : `Слово «${itemToDelete.word}» удалено`)
-      : (lang === 'en' ? 'Word removed' : 'Слово удалено');
-    setSnackbarMessage(msg);
-    setSnackbarOpen(true);
+    try {
+      await deleteWordApi(id);
+      setVocabList((prev) => prev.filter((item) => item.id !== id));
+      const msg = itemToDelete
+        ? (lang === 'en' ? `Word "${itemToDelete.word}" removed` : `Слово «${itemToDelete.word}» удалено`)
+        : (lang === 'en' ? 'Word removed' : 'Слово удалено');
+      setSnackbarMessage(msg);
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error('Server word delete failed:', err);
+      setSnackbarMessage(lang === 'en' ? 'Failed to delete word from server' : 'Ошибка удаления слова на сервере');
+      setSnackbarOpen(true);
+    }
   };
 
-  const handleClearAll = () => {
-    const cleared = clearVocab();
-    setVocabList(cleared);
-    setSearchQuery('');
-    setSnackbarMessage(t('vocabClearedSnackbar'));
-    setSnackbarOpen(true);
+  const handleClearAll = async () => {
+    try {
+      await Promise.all(vocabList.map((item) => deleteWordApi(item.id)));
+      setVocabList([]);
+      setSearchQuery('');
+      setSnackbarMessage(t('vocabClearedSnackbar'));
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error('Clear all failed:', err);
+      setSnackbarMessage(lang === 'en' ? 'Failed to clear dictionary on server' : 'Ошибка очистки словаря на сервере');
+      setSnackbarOpen(true);
+    }
   };
 
   const filteredList = filterVocabList(vocabList, searchQuery);
@@ -86,6 +200,12 @@ export const VocabPage = () => {
           {t('vocabTitle')}
         </Typography>
 
+        {fetchError && (
+          <Alert severity="warning" sx={{ mb: 2.5, width: '100%', maxWidth: 780 }}>
+            {fetchError}
+          </Alert>
+        )}
+
         {/* Search Bar */}
         {!isLoading && vocabList.length > 0 && (
           <VocabSearchBar
@@ -114,6 +234,27 @@ export const VocabPage = () => {
             </Typography>
 
             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+              <Button
+                size="small"
+                variant="contained"
+                onClick={handleOpenAdd}
+                sx={{
+                  backgroundColor: RED_COLOR,
+                  color: '#FFFFFF',
+                  fontSize: '0.82rem',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    backgroundColor: '#7A0B0B',
+                    boxShadow: 'none',
+                  },
+                }}
+              >
+                {lang === 'en' ? '+ Add word' : '+ Добавить слово'}
+              </Button>
+
               {isSearching && (
                 <Button
                   size="small"
@@ -156,7 +297,29 @@ export const VocabPage = () => {
           <VocabSkeleton />
         ) : vocabList.length === 0 ? (
           <Fade in timeout={350}>
-            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Button
+                variant="contained"
+                onClick={handleOpenAdd}
+                sx={{
+                  backgroundColor: RED_COLOR,
+                  color: '#FFFFFF',
+                  fontSize: '0.88rem',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderRadius: '8px',
+                  px: 2.5,
+                  py: 0.8,
+                  mb: 1.5,
+                  boxShadow: 'none',
+                  '&:hover': {
+                    backgroundColor: '#7A0B0B',
+                    boxShadow: 'none',
+                  },
+                }}
+              >
+                {lang === 'en' ? '+ Add first word' : '+ Добавить слово'}
+              </Button>
               <VocabEmptyState />
             </Box>
           </Fade>
@@ -181,6 +344,93 @@ export const VocabPage = () => {
           </Fade>
         )}
 
+        {/* Add Word Modal */}
+        <Dialog
+          open={isAddOpen}
+          onClose={handleCloseAdd}
+          maxWidth="xs"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: '12px',
+                p: 1,
+              },
+            },
+          }}
+
+        >
+          <DialogTitle sx={{ fontWeight: 700, fontSize: '1.2rem', color: '#111111' }}>
+            {lang === 'en' ? 'Add Word to Dictionary' : 'Добавить слово в словарь'}
+          </DialogTitle>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            {addError && (
+              <Alert severity="error" sx={{ py: 0.5 }}>
+                {addError}
+              </Alert>
+            )}
+            <TextField
+              autoFocus
+              label={lang === 'en' ? 'Word / Kanji *' : 'Слово / Иероглифы *'}
+              placeholder="今日"
+              value={wordInput}
+              onChange={(e) => setWordInput(e.target.value)}
+              fullWidth
+              size="small"
+              disabled={isSubmitting}
+            />
+            <TextField
+              label={lang === 'en' ? 'Reading (kana)' : 'Чтение (кана)'}
+              placeholder="きょう"
+              value={readingInput}
+              onChange={(e) => setReadingInput(e.target.value)}
+              fullWidth
+              size="small"
+              disabled={isSubmitting}
+            />
+            <TextField
+              label={lang === 'en' ? 'Meaning / Translation' : 'Значение / Перевод'}
+              placeholder="сегодня, today"
+              value={meaningInput}
+              onChange={(e) => setMeaningInput(e.target.value)}
+              fullWidth
+              size="small"
+              disabled={isSubmitting}
+            />
+            <TextField
+              label={lang === 'en' ? 'Note (optional)' : 'Заметка (необязательно)'}
+              placeholder="..."
+              value={notesInput}
+              onChange={(e) => setNotesInput(e.target.value)}
+              fullWidth
+              size="small"
+              multiline
+              rows={2}
+              disabled={isSubmitting}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={handleCloseAdd} disabled={isSubmitting} sx={{ color: '#666666', textTransform: 'none' }}>
+              {lang === 'en' ? 'Cancel' : 'Отмена'}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSaveNewWord}
+              disabled={isSubmitting}
+              sx={{
+                backgroundColor: RED_COLOR,
+                color: '#FFFFFF',
+                fontWeight: 600,
+                textTransform: 'none',
+                boxShadow: 'none',
+                '&:hover': { backgroundColor: '#7A0B0B', boxShadow: 'none' },
+              }}
+            >
+              {isSubmitting ? <CircularProgress size={20} color="inherit" /> : (lang === 'en' ? 'Save' : 'Сохранить')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={2200}
@@ -204,3 +454,4 @@ export const VocabPage = () => {
     </Layout>
   );
 };
+

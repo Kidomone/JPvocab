@@ -7,10 +7,10 @@ import {
   Paper,
   Collapse,
   CircularProgress,
-  Grow,
+  Fade,
   Alert,
 } from '@mui/material';
-import { useTranslation } from '../../../shared';
+import { useTranslation, RED_COLOR } from '../../../shared';
 import { useAuth } from '../model/context';
 import { AuthApiError } from '../api/authApi';
 
@@ -27,8 +27,128 @@ export interface LoginFormErrors {
   confirmPassword?: string;
 }
 
+interface FormFieldProps {
+  id: string;
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
+  disabled?: boolean;
+  autoComplete?: string;
+  isPassword?: boolean;
+}
+
+const FormField = ({
+  id,
+  label,
+  type = 'text',
+  value,
+  onChange,
+  error,
+  disabled,
+  autoComplete,
+  isPassword = false,
+}: FormFieldProps) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+      <Typography
+        component="label"
+        htmlFor={id}
+        sx={{
+          fontSize: '0.86rem',
+          fontWeight: 600,
+          color: '#333333',
+        }}
+      >
+        {label}
+      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          height: 44,
+          px: 1.75,
+          backgroundColor: '#ECECEC',
+          borderRadius: '6px',
+          transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+          boxShadow: error ? '0 0 0 2px #d32f2f' : 'none',
+          '&:hover': {
+            backgroundColor: '#E2E2E2',
+          },
+          '&:focus-within': {
+            backgroundColor: '#FFFFFF',
+            boxShadow: error ? '0 0 0 2px #d32f2f' : `0 0 0 2px ${RED_COLOR}`,
+          },
+        }}
+      >
+        <InputBase
+          id={id}
+          type={inputType}
+          fullWidth
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          autoComplete={autoComplete}
+          inputProps={{
+            style: {
+              fontSize: '0.92rem',
+              color: '#222222',
+              padding: 0,
+            },
+          }}
+        />
+        {isPassword && (
+          <Box
+            component="button"
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            tabIndex={-1}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            sx={{
+              background: 'transparent',
+              border: 'none',
+              p: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+              color: '#777777',
+              transition: 'color 0.15s ease',
+              '&:hover': {
+                color: '#111111',
+              },
+            }}
+          >
+            {showPassword ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                <line x1="2" x2="22" y1="2" y2="22" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </Box>
+        )}
+      </Box>
+      <Collapse in={Boolean(error)}>
+        <Typography sx={{ color: '#d32f2f', fontSize: '0.78rem', mt: 0.25, fontWeight: 500 }}>
+          {error}
+        </Typography>
+      </Collapse>
+    </Box>
+  );
+};
+
 export const LoginForm = ({ onSuccess }: LoginFormProps) => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { user, isAuthenticated, login, register, logout, isLoading } = useAuth();
 
   const [mode, setMode] = useState<AuthMode>('login');
@@ -39,11 +159,20 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [errors, setErrors] = useState<LoginFormErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode);
+    setErrors({});
+    setServerError(null);
+  };
+
+  // Profile card for authenticated users
   if (isAuthenticated && user) {
+    const userInitial = (user.username?.[0] || 'U').toUpperCase();
+
     return (
-      <Grow in timeout={450}>
+      <Fade in timeout={300}>
         <Paper
-          elevation={6}
+          elevation={0}
           sx={{
             backgroundColor: '#FFFFFF',
             borderRadius: '12px',
@@ -53,84 +182,129 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
+            boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.35)',
           }}
         >
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              backgroundColor: RED_COLOR,
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.9rem',
+              fontWeight: 800,
+              fontFamily: "'Inter', sans-serif",
+              mb: 2,
+              boxShadow: '0 6px 16px rgba(153, 15, 15, 0.28)',
+            }}
+          >
+            {userInitial}
+          </Box>
+
           <Typography
-            variant="h4"
+            variant="h5"
             component="h1"
             sx={{
               fontWeight: 700,
-              fontSize: '1.65rem',
-              color: '#1a1a1a',
+              fontSize: '1.45rem',
+              color: '#111111',
               textAlign: 'center',
-              mb: 0.5,
               fontFamily: "'Inter', sans-serif",
             }}
           >
             {user.username}
           </Typography>
+
           <Typography
             sx={{
-              fontSize: '0.92rem',
+              fontSize: '0.9rem',
               color: '#666666',
-              mb: 3,
+              textAlign: 'center',
+              mb: 2.5,
             }}
           >
             {user.email}
           </Typography>
 
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.75,
+              px: 1.5,
+              py: 0.5,
+              borderRadius: '20px',
+              backgroundColor: '#ECFDF5',
+              color: '#065F46',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              mb: 3.5,
+            }}
+          >
+            <Box
+              sx={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                backgroundColor: '#10B981',
+              }}
+            />
+            {lang === 'ru' ? 'Активная сессия' : 'Active Session'}
+          </Box>
+
           <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <Button
               fullWidth
               variant="contained"
-              onClick={() => logout()}
+              onClick={onSuccess}
               sx={{
                 backgroundColor: '#000000',
                 color: '#FFFFFF',
                 borderRadius: '6px',
-                py: 1,
-                fontSize: '0.9rem',
+                py: 1.2,
+                fontSize: '0.92rem',
                 fontWeight: 600,
                 textTransform: 'none',
+                transition: 'all 0.2s ease',
                 '&:hover': {
                   backgroundColor: '#222222',
                 },
               }}
             >
-              {t('navLogout')}
+              {t('navVocab')}
             </Button>
+
             <Button
               fullWidth
               variant="outlined"
-              onClick={onSuccess}
+              onClick={() => logout()}
               sx={{
-                borderColor: '#000000',
-                color: '#000000',
+                borderColor: '#D9D9D9',
+                color: '#333333',
+                backgroundColor: '#FFFFFF',
                 borderRadius: '6px',
-                py: 1,
-                fontSize: '0.9rem',
+                py: 1.2,
+                fontSize: '0.92rem',
                 fontWeight: 600,
                 textTransform: 'none',
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  backgroundColor: 'rgba(0,0,0,0.05)',
-                  borderColor: '#000000',
+                  borderColor: '#B0B0B0',
+                  backgroundColor: '#F5F5F5',
                 },
               }}
             >
-              {t('toHomeBtn')}
+              {t('navLogout')}
             </Button>
           </Box>
         </Paper>
-      </Grow>
+      </Fade>
     );
   }
-
-  const switchMode = (newMode: AuthMode) => {
-    setMode(newMode);
-    setErrors({});
-    setServerError(null);
-  };
 
   const validate = (): boolean => {
     const newErrors: LoginFormErrors = {};
@@ -200,125 +374,100 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
     }
   };
 
-  const handleUsernameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setUsernameInput(e.target.value);
-    if (errors.username) {
-      setErrors((prev) => ({ ...prev, username: undefined }));
-    }
-    if (serverError) setServerError(null);
-  };
-
-  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setEmailInput(e.target.value);
-    if (errors.email) {
-      setErrors((prev) => ({ ...prev, email: undefined }));
-    }
-    if (serverError) setServerError(null);
-  };
-
-  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setPasswordInput(e.target.value);
-    if (errors.password) {
-      setErrors((prev) => ({ ...prev, password: undefined }));
-    }
-    if (serverError) setServerError(null);
-  };
-
-  const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setConfirmPasswordInput(e.target.value);
-    if (errors.confirmPassword) {
-      setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
-    }
-    if (serverError) setServerError(null);
-  };
-
   return (
-    <Grow in timeout={450}>
+    <Fade in timeout={300}>
       <Paper
-        elevation={6}
+        elevation={0}
         component="form"
         onSubmit={handleSubmit}
+        noValidate
         sx={{
           backgroundColor: '#FFFFFF',
           borderRadius: '12px',
           width: '100%',
-          maxWidth: 420,
-          minHeight: 460,
-          p: { xs: 3.5, sm: 4.5 },
+          maxWidth: 440,
+          p: { xs: 3, sm: 4.5 },
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
-          transition: 'transform 0.2s ease',
+          boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.35)',
         }}
       >
-        {/* Tab switcher: Login | Register */}
+        {/* Modern Minimalist Tabs */}
         <Box
           sx={{
             display: 'flex',
+            borderBottom: '1px solid #EAEAEA',
             width: '100%',
-            backgroundColor: '#F0F0F0',
-            borderRadius: '8px',
-            p: 0.5,
-            mb: 3,
+            mb: 2.5,
           }}
         >
-          <Button
-            fullWidth
+          <Box
+            component="button"
+            type="button"
             onClick={() => switchMode('login')}
             sx={{
-              py: 0.8,
-              borderRadius: '6px',
-              fontSize: '0.9rem',
+              flex: 1,
+              pb: 1.5,
+              pt: 0.5,
+              background: 'transparent',
+              border: 'none',
+              borderBottom: mode === 'login' ? '2.5px solid #111111' : '2.5px solid transparent',
+              color: mode === 'login' ? '#111111' : '#888888',
+              fontSize: '1.05rem',
               fontWeight: mode === 'login' ? 700 : 500,
-              color: mode === 'login' ? '#FFFFFF' : '#555555',
-              backgroundColor: mode === 'login' ? '#000000' : 'transparent',
-              textTransform: 'none',
-              boxShadow: mode === 'login' ? '0 2px 6px rgba(0,0,0,0.2)' : 'none',
-              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+              textAlign: 'center',
+              fontFamily: "'Inter', sans-serif",
+              transition: 'all 0.18s ease',
+              mb: '-1px',
               '&:hover': {
-                backgroundColor: mode === 'login' ? '#1E1E1E' : 'rgba(0,0,0,0.05)',
+                color: '#111111',
               },
             }}
           >
             {t('loginTab')}
-          </Button>
+          </Box>
 
-          <Button
-            fullWidth
+          <Box
+            component="button"
+            type="button"
             onClick={() => switchMode('register')}
             sx={{
-              py: 0.8,
-              borderRadius: '6px',
-              fontSize: '0.9rem',
+              flex: 1,
+              pb: 1.5,
+              pt: 0.5,
+              background: 'transparent',
+              border: 'none',
+              borderBottom: mode === 'register' ? '2.5px solid #111111' : '2.5px solid transparent',
+              color: mode === 'register' ? '#111111' : '#888888',
+              fontSize: '1.05rem',
               fontWeight: mode === 'register' ? 700 : 500,
-              color: mode === 'register' ? '#FFFFFF' : '#555555',
-              backgroundColor: mode === 'register' ? '#000000' : 'transparent',
-              textTransform: 'none',
-              boxShadow: mode === 'register' ? '0 2px 6px rgba(0,0,0,0.2)' : 'none',
-              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+              textAlign: 'center',
+              fontFamily: "'Inter', sans-serif",
+              transition: 'all 0.18s ease',
+              mb: '-1px',
               '&:hover': {
-                backgroundColor: mode === 'register' ? '#1E1E1E' : 'rgba(0,0,0,0.05)',
+                color: '#111111',
               },
             }}
           >
             {t('registerTab')}
-          </Button>
+          </Box>
         </Box>
 
+        {/* Subtitle */}
         <Typography
-          variant="h4"
-          component="h1"
           sx={{
-            fontWeight: 700,
-            fontSize: '1.85rem',
-            color: '#1a1a1a',
+            fontSize: '0.875rem',
+            color: '#666666',
             textAlign: 'center',
             mb: 3,
-            fontFamily: "'Inter', sans-serif",
           }}
         >
-          {mode === 'login' ? t('loginTitle') : t('registerTitle')}
+          {mode === 'login'
+            ? (lang === 'ru' ? 'Введите ваши данные для входа' : 'Sign in to access your saved words')
+            : (lang === 'ru' ? 'Создайте профиль для синхронизации словаря' : 'Create an account to track your progress')}
         </Typography>
 
         {/* Server Error Alert */}
@@ -327,7 +476,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
             severity="error"
             onClose={() => setServerError(null)}
             sx={{
-              fontSize: '0.85rem',
+              fontSize: '0.84rem',
               py: 0.5,
               borderRadius: '6px',
             }}
@@ -336,310 +485,94 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
           </Alert>
         </Collapse>
 
-        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2, mb: 3.5 }}>
-          {/* Username row */}
-          <Box>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1.5,
-              }}
-            >
-              <Typography
-                component="label"
-                htmlFor="auth-username"
-                sx={{
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  color: '#333333',
-                  minWidth: 85,
-                }}
-              >
-                {t('loginUsernameLabel')}
-              </Typography>
-              <Box
-                sx={{
-                  flex: 1,
-                  backgroundColor: '#D9D9D9',
-                  borderRadius: '4px',
-                  px: 1.5,
-                  py: 0.6,
-                  transition: 'all 0.2s ease',
-                  boxShadow: errors.username ? '0 0 0 2px rgba(211, 47, 47, 0.7)' : 'none',
-                  '&:focus-within': {
-                    backgroundColor: '#CECECE',
-                    boxShadow: errors.username ? '0 0 0 2px #d32f2f' : '0 0 0 1.5px #555555',
-                  },
-                }}
-              >
-                <InputBase
-                  id="auth-username"
-                  fullWidth
-                  value={usernameInput}
-                  onChange={handleUsernameChange}
-                  disabled={isLoading}
-                  inputProps={{
-                    style: {
-                      fontSize: '0.92rem',
-                      color: '#222222',
-                    },
-                  }}
-                />
-              </Box>
-            </Box>
+        {/* Input Fields */}
+        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+          <FormField
+            id="auth-username"
+            label={t('loginUsernameLabel')}
+            value={usernameInput}
+            onChange={(e) => {
+              setUsernameInput(e.target.value);
+              if (errors.username) setErrors((prev) => ({ ...prev, username: undefined }));
+              if (serverError) setServerError(null);
+            }}
+            error={errors.username}
+            disabled={isLoading}
+            autoComplete="username"
+          />
 
-            <Collapse in={Boolean(errors.username)}>
-              <Typography
-                sx={{
-                  color: '#d32f2f',
-                  fontSize: '0.78rem',
-                  mt: 0.5,
-                  textAlign: 'right',
-                  fontWeight: 500,
-                }}
-              >
-                {errors.username}
-              </Typography>
-            </Collapse>
-          </Box>
-
-          {/* Email row (Register mode only) */}
           {mode === 'register' && (
-            <Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 1.5,
-                }}
-              >
-                <Typography
-                  component="label"
-                  htmlFor="auth-email"
-                  sx={{
-                    fontSize: '0.9rem',
-                    fontWeight: 500,
-                    color: '#333333',
-                    minWidth: 85,
-                  }}
-                >
-                  {t('loginEmailLabel')}
-                </Typography>
-                <Box
-                  sx={{
-                    flex: 1,
-                    backgroundColor: '#D9D9D9',
-                    borderRadius: '4px',
-                    px: 1.5,
-                    py: 0.6,
-                    transition: 'all 0.2s ease',
-                    boxShadow: errors.email ? '0 0 0 2px rgba(211, 47, 47, 0.7)' : 'none',
-                    '&:focus-within': {
-                      backgroundColor: '#CECECE',
-                      boxShadow: errors.email ? '0 0 0 2px #d32f2f' : '0 0 0 1.5px #555555',
-                    },
-                  }}
-                >
-                  <InputBase
-                    id="auth-email"
-                    type="email"
-                    fullWidth
-                    value={emailInput}
-                    onChange={handleEmailChange}
-                    disabled={isLoading}
-                    inputProps={{
-                      style: {
-                        fontSize: '0.92rem',
-                        color: '#222222',
-                      },
-                    }}
-                  />
-                </Box>
-              </Box>
-
-              <Collapse in={Boolean(errors.email)}>
-                <Typography
-                  sx={{
-                    color: '#d32f2f',
-                    fontSize: '0.78rem',
-                    mt: 0.5,
-                    textAlign: 'right',
-                    fontWeight: 500,
-                  }}
-                >
-                  {errors.email}
-                </Typography>
-              </Collapse>
-            </Box>
+            <FormField
+              id="auth-email"
+              label={t('loginEmailLabel')}
+              type="email"
+              value={emailInput}
+              onChange={(e) => {
+                setEmailInput(e.target.value);
+                if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                if (serverError) setServerError(null);
+              }}
+              error={errors.email}
+              disabled={isLoading}
+              autoComplete="email"
+            />
           )}
 
-          {/* Password row */}
-          <Box>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1.5,
-              }}
-            >
-              <Typography
-                component="label"
-                htmlFor="auth-password"
-                sx={{
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  color: '#333333',
-                  minWidth: 85,
-                }}
-              >
-                {t('loginPasswordLabel')}
-              </Typography>
-              <Box
-                sx={{
-                  flex: 1,
-                  backgroundColor: '#D9D9D9',
-                  borderRadius: '4px',
-                  px: 1.5,
-                  py: 0.6,
-                  transition: 'all 0.2s ease',
-                  boxShadow: errors.password ? '0 0 0 2px rgba(211, 47, 47, 0.7)' : 'none',
-                  '&:focus-within': {
-                    backgroundColor: '#CECECE',
-                    boxShadow: errors.password ? '0 0 0 2px #d32f2f' : '0 0 0 1.5px #555555',
-                  },
-                }}
-              >
-                <InputBase
-                  id="auth-password"
-                  type="password"
-                  fullWidth
-                  value={passwordInput}
-                  onChange={handlePasswordChange}
-                  disabled={isLoading}
-                  inputProps={{
-                    style: {
-                      fontSize: '0.92rem',
-                      color: '#222222',
-                    },
-                  }}
-                />
-              </Box>
-            </Box>
+          <FormField
+            id="auth-password"
+            label={t('loginPasswordLabel')}
+            isPassword
+            value={passwordInput}
+            onChange={(e) => {
+              setPasswordInput(e.target.value);
+              if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+              if (serverError) setServerError(null);
+            }}
+            error={errors.password}
+            disabled={isLoading}
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          />
 
-            <Collapse in={Boolean(errors.password)}>
-              <Typography
-                sx={{
-                  color: '#d32f2f',
-                  fontSize: '0.78rem',
-                  mt: 0.5,
-                  textAlign: 'right',
-                  fontWeight: 500,
-                }}
-              >
-                {errors.password}
-              </Typography>
-            </Collapse>
-          </Box>
-
-          {/* Confirm Password row (Register mode only) */}
           {mode === 'register' && (
-            <Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 1.5,
-                }}
-              >
-                <Typography
-                  component="label"
-                  htmlFor="auth-confirm-password"
-                  sx={{
-                    fontSize: '0.82rem',
-                    fontWeight: 500,
-                    color: '#333333',
-                    minWidth: 85,
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {t('loginConfirmPasswordLabel')}
-                </Typography>
-                <Box
-                  sx={{
-                    flex: 1,
-                    backgroundColor: '#D9D9D9',
-                    borderRadius: '4px',
-                    px: 1.5,
-                    py: 0.6,
-                    transition: 'all 0.2s ease',
-                    boxShadow: errors.confirmPassword ? '0 0 0 2px rgba(211, 47, 47, 0.7)' : 'none',
-                    '&:focus-within': {
-                      backgroundColor: '#CECECE',
-                      boxShadow: errors.confirmPassword ? '0 0 0 2px #d32f2f' : '0 0 0 1.5px #555555',
-                    },
-                  }}
-                >
-                  <InputBase
-                    id="auth-confirm-password"
-                    type="password"
-                    fullWidth
-                    value={confirmPasswordInput}
-                    onChange={handleConfirmPasswordChange}
-                    disabled={isLoading}
-                    inputProps={{
-                      style: {
-                        fontSize: '0.92rem',
-                        color: '#222222',
-                      },
-                    }}
-                  />
-                </Box>
-              </Box>
-
-              <Collapse in={Boolean(errors.confirmPassword)}>
-                <Typography
-                  sx={{
-                    color: '#d32f2f',
-                    fontSize: '0.78rem',
-                    mt: 0.5,
-                    textAlign: 'right',
-                    fontWeight: 500,
-                  }}
-                >
-                  {errors.confirmPassword}
-                </Typography>
-              </Collapse>
-            </Box>
+            <FormField
+              id="auth-confirm-password"
+              label={t('loginConfirmPasswordLabel')}
+              isPassword
+              value={confirmPasswordInput}
+              onChange={(e) => {
+                setConfirmPasswordInput(e.target.value);
+                if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                if (serverError) setServerError(null);
+              }}
+              error={errors.confirmPassword}
+              disabled={isLoading}
+              autoComplete="new-password"
+            />
           )}
         </Box>
 
-        {/* Submit button */}
+        {/* Submit Button */}
         <Button
           type="submit"
           variant="contained"
+          fullWidth
           disabled={isLoading}
           sx={{
             backgroundColor: '#000000',
             color: '#FFFFFF',
             borderRadius: '6px',
-            px: 4,
-            py: 0.8,
-            fontSize: '0.88rem',
+            py: 1.25,
+            fontSize: '0.95rem',
             fontWeight: 600,
-            textTransform: 'lowercase',
-            letterSpacing: '0.3px',
-            minWidth: 120,
+            textTransform: 'none',
+            boxShadow: 'none',
             transition: 'all 0.2s ease',
             '&:hover': {
               backgroundColor: '#222222',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
             },
             '&:active': {
-              transform: 'scale(0.97)',
+              transform: 'scale(0.99)',
             },
             '&.Mui-disabled': {
               backgroundColor: '#666666',
@@ -648,14 +581,52 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
           }}
         >
           {isLoading ? (
-            <CircularProgress size={16} sx={{ color: '#FFFFFF' }} />
+            <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
           ) : mode === 'login' ? (
             t('loginSubmitBtn')
           ) : (
             t('registerSubmitBtn')
           )}
         </Button>
+
+        {/* Bottom Switch Link */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 0.75,
+            mt: 3,
+            pt: 2.5,
+            borderTop: '1px solid #EEEEEE',
+            width: '100%',
+          }}
+        >
+          <Typography sx={{ fontSize: '0.86rem', color: '#666666' }}>
+            {mode === 'login'
+              ? (lang === 'ru' ? 'Ещё нет аккаунта?' : "Don't have an account?")
+              : (lang === 'ru' ? 'Уже зарегистрированы?' : 'Already have an account?')}
+          </Typography>
+          <Button
+            type="button"
+            onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
+            sx={{
+              p: 0,
+              minWidth: 'auto',
+              fontSize: '0.86rem',
+              fontWeight: 700,
+              color: RED_COLOR,
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: 'transparent',
+                textDecoration: 'underline',
+              },
+            }}
+          >
+            {mode === 'login' ? t('registerTab') : t('loginTab')}
+          </Button>
+        </Box>
       </Paper>
-    </Grow>
+    </Fade>
   );
 };

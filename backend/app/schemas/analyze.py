@@ -25,6 +25,7 @@ class TokenDetail(BaseModel):
 class AnalyzeSentenceRequest(BaseModel):
     text: str = Field(..., min_length=1, description="Sentence or phrase to analyze in Japanese or English")
     source_lang: Optional[str] = Field("auto", description="Source language ('ja', 'en', or 'auto')")
+    lang: Optional[str] = Field("ru", description="User interface language ('ru' or 'en')")
 
 class AnalyzeSentenceResponse(BaseModel):
     original_text: str
@@ -32,6 +33,7 @@ class AnalyzeSentenceResponse(BaseModel):
     target_lang: str
     japanese_text: str
     translation: str
+    secondary_translation: Optional[str] = None
     tokens: List[TokenDetail]
 
 class DictionaryEntry(BaseModel):

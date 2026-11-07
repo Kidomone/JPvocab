@@ -1,9 +1,4 @@
 import { Box, Typography } from '@mui/material';
-import {
-  DEFAULT_SENTENCE,
-  DEFAULT_TRANSLATION_EN,
-  DEFAULT_TRANSLATION_RU,
-} from '../model/mockData';
 import { useTranslation } from '../../../shared';
 
 export interface SentenceTranslationProps {
@@ -15,21 +10,21 @@ export interface SentenceTranslationProps {
 }
 
 export const SentenceTranslation = ({
-  text,
+  text: _text,
   translation,
   secondaryTranslation,
   japaneseText,
   sourceLang,
 }: SentenceTranslationProps) => {
   const { t, lang } = useTranslation();
-  const isDefault = text === DEFAULT_SENTENCE;
   const isEnglish = sourceLang === 'en';
+
 
   const formatTranslation = (raw: string | undefined): string => {
     if (!raw) {
-      if (isDefault) return DEFAULT_TRANSLATION_EN;
-      return `${t('translationSentencePrefix')} "${text}"`;
+      return '';
     }
+
 
     const sentencePrefixMatch = raw.match(/^(?:Перевод предложения:|Sentence translation:)\s*(.*)$/i);
     if (sentencePrefixMatch) {
@@ -71,7 +66,7 @@ export const SentenceTranslation = ({
           fontSize: '1.15rem',
           color: '#222222',
           lineHeight: 1.5,
-          maxWidth: 480,
+          maxWidth: { xs: '100%', md: 620 },
           fontFamily: isEnglish ? "'Noto Sans JP', 'Inter', sans-serif" : "'Inter', sans-serif",
         }}
       >
@@ -87,27 +82,41 @@ export const SentenceTranslation = ({
             color: '#555555',
             fontFamily: "'Noto Sans JP', sans-serif",
             lineHeight: 1.4,
-            maxWidth: 480,
+            maxWidth: { xs: '100%', md: 620 },
           }}
         >
           {japaneseText}
         </Typography>
       )}
 
-      {/* Default Russian translation */}
-      {isDefault && lang === 'ru' && (
-        <Typography
-          variant="body2"
-          sx={{
-            fontSize: '1.05rem',
-            color: '#666666',
-            lineHeight: 1.4,
-            maxWidth: 480,
-          }}
-        >
-          {secondaryTranslation || DEFAULT_TRANSLATION_RU}
-        </Typography>
+      {/* Russian translation for English or Japanese input when Russian language is active */}
+      {lang === 'ru' && secondaryTranslation && secondaryTranslation !== displayTranslation && (
+        <Box sx={{ mt: 0.5 }}>
+          <Typography
+            sx={{
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: '#777777',
+              mb: 0.2,
+            }}
+          >
+            {isEnglish ? 'Перевод на русский:' : 'English:'}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: '1.05rem',
+              color: '#444444',
+              lineHeight: 1.4,
+              maxWidth: { xs: '100%', md: 620 },
+            }}
+          >
+            {secondaryTranslation}
+          </Typography>
+        </Box>
       )}
     </Box>
   );
 };
+
+

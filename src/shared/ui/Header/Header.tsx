@@ -1,4 +1,5 @@
-import { Box, Typography, Link as MuiLink } from '@mui/material';
+import { useState, type MouseEvent } from 'react';
+import { Box, Typography, Link as MuiLink, Popover } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { RED_COLOR } from '../../config';
 import { useTranslation } from '../../lib/i18n';
@@ -6,8 +7,24 @@ import { useAuth } from '../../../features/auth';
 
 export const Header = () => {
   const location = useLocation();
-  const { lang, setLang, toggleLang, t } = useTranslation();
+  const { lang, toggleLang, t } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const isMenuOpen = Boolean(anchorEl);
+
+  const handleOpenMenu = (event: MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    handleCloseMenu();
+    logout();
+  };
 
   return (
     <Box
@@ -36,10 +53,6 @@ export const Header = () => {
             color: '#FFFFFF',
             fontFamily: "'Inter', sans-serif",
             cursor: 'pointer',
-            transition: 'opacity 0.2s',
-            '&:hover': {
-              opacity: 0.9,
-            },
           }}
         >
           JPVocab
@@ -47,6 +60,7 @@ export const Header = () => {
       </RouterLink>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 3 } }}>
+        {/* Vocab */}
         <MuiLink
           component={RouterLink}
           to="/vocab"
@@ -56,9 +70,8 @@ export const Header = () => {
             fontWeight: 500,
             textDecoration: location.pathname === '/vocab' ? 'underline' : 'none',
             textUnderlineOffset: '4px',
-            transition: 'opacity 0.2s',
+            cursor: 'pointer',
             '&:hover': {
-              opacity: 0.85,
               textDecoration: 'underline',
             },
           }}
@@ -66,50 +79,142 @@ export const Header = () => {
           {t('navVocab')}
         </MuiLink>
 
+        {/* User */}
         {isAuthenticated && user ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <MuiLink
-              component={RouterLink}
-              to="/login"
+          <>
+            <Box
+              component="button"
+              type="button"
+              onClick={handleOpenMenu}
+              aria-label="User menu"
+              aria-expanded={isMenuOpen}
               sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.6,
+                background: 'transparent',
+                border: 'none',
+                p: 0,
+                cursor: 'pointer',
                 color: '#FFFFFF',
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                textDecoration: location.pathname === '/login' ? 'underline' : 'none',
-                textUnderlineOffset: '4px',
-                transition: 'opacity 0.2s',
-                '&:hover': {
-                  opacity: 0.85,
+                userSelect: 'none',
+                '&:hover .user-name': {
                   textDecoration: 'underline',
                 },
               }}
             >
-              {user.username}
-            </MuiLink>
-            <Box
-              component="button"
-              onClick={() => logout()}
-              sx={{
-                background: 'rgba(0, 0, 0, 0.28)',
-                border: '1px solid rgba(255, 255, 255, 0.4)',
-                color: '#FFFFFF',
-                borderRadius: '6px',
-                px: 1.2,
-                py: 0.35,
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  background: 'rgba(0, 0, 0, 0.45)',
-                  borderColor: '#FFFFFF',
+              <Typography
+                className="user-name"
+                sx={{
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  color: '#FFFFFF',
+                  maxWidth: 150,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1,
+                  textUnderlineOffset: '4px',
+                }}
+              >
+                {user.username}
+              </Typography>
+              <Box
+                component="span"
+                sx={{
+                  fontSize: '0.72rem',
+                  opacity: 0.8,
+                  lineHeight: 1,
+                }}
+              >
+                ▾
+              </Box>
+            </Box>
+
+            <Popover
+              open={isMenuOpen}
+              anchorEl={anchorEl}
+              onClose={handleCloseMenu}
+              transitionDuration={0}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              slotProps={{
+                paper: {
+                  elevation: 0,
+                  sx: {
+                    mt: 1,
+                    backgroundColor: '#FFFFFF',
+                    color: '#111111',
+                    borderRadius: '8px',
+                    border: '1px solid #E5E7EB',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04)',
+                    p: '4px',
+                    minWidth: 130,
+                  },
                 },
               }}
-              title={t('navLogout')}
             >
-              {t('navLogout')}
-            </Box>
-          </Box>
+              <Box
+                component="button"
+                type="button"
+                onClick={handleLogout}
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.2,
+                  background: 'transparent',
+                  border: 'none',
+                  px: 1.5,
+                  py: 1,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  color: '#DC2626',
+                  textAlign: 'left',
+                  transition: 'color 0.15s ease',
+                  '&:hover': {
+                    color: '#991B1B',
+                    '& .logout-text': {
+                      textDecoration: 'underline',
+                    },
+                  },
+                }}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <Typography
+                  className="logout-text"
+                  sx={{
+                    fontSize: '0.92rem',
+                    fontWeight: 600,
+                    color: 'inherit',
+                    fontFamily: "'Inter', sans-serif",
+                    textUnderlineOffset: '3px',
+                  }}
+                >
+                  {t('navLogout')}
+                </Typography>
+              </Box>
+            </Popover>
+          </>
         ) : (
           <MuiLink
             component={RouterLink}
@@ -120,9 +225,8 @@ export const Header = () => {
               fontWeight: 500,
               textDecoration: location.pathname === '/login' ? 'underline' : 'none',
               textUnderlineOffset: '4px',
-              transition: 'opacity 0.2s',
+              cursor: 'pointer',
               '&:hover': {
-                opacity: 0.85,
                 textDecoration: 'underline',
               },
             }}
@@ -131,99 +235,30 @@ export const Header = () => {
           </MuiLink>
         )}
 
+        {/* Language change */}
         <Box
+          component="button"
+          type="button"
           onClick={toggleLang}
-          role="button"
-          tabIndex={0}
-          aria-label={lang === 'ru' ? 'Switch to English' : 'Переключить на русский'}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              toggleLang();
-            }
-          }}
           sx={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            width: 72,
-            height: 28,
-            backgroundColor: 'rgba(0, 0, 0, 0.28)',
-            border: '1px solid rgba(255, 255, 255, 0.35)',
-            borderRadius: '14px',
-            p: '2px',
+            background: 'transparent',
+            border: 'none',
+            p: 0,
             cursor: 'pointer',
+            color: '#FFFFFF',
+            fontSize: '0.92rem',
+            fontWeight: 600,
+            fontFamily: "'Inter', sans-serif",
+            letterSpacing: '0.5px',
             userSelect: 'none',
-            overflow: 'hidden',
-            transition: 'border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease',
             '&:hover': {
-              borderColor: 'rgba(255, 255, 255, 0.8)',
-              backgroundColor: 'rgba(0, 0, 0, 0.36)',
-            },
-            '&:focus-visible': {
-              outline: '2px solid #FFFFFF',
-              outlineOffset: 2,
+              textDecoration: 'underline',
+              textUnderlineOffset: '4px',
             },
           }}
           title={lang === 'ru' ? 'Switch to English' : 'Переключить на русский'}
         >
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 2,
-              bottom: 2,
-              left: 2,
-              width: 34,
-              backgroundColor: '#FFFFFF',
-              borderRadius: '12px',
-              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.25)',
-              transform: lang === 'ru' ? 'translateX(0)' : 'translateX(34px)',
-              transition: 'transform 0.3s cubic-bezier(0.34, 1.25, 0.64, 1)',
-              pointerEvents: 'none',
-            }}
-          />
-
-          <Box
-            component="span"
-            onClick={(e) => {
-              e.stopPropagation();
-              setLang('ru');
-            }}
-            sx={{
-              flex: 1,
-              textAlign: 'center',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              zIndex: 1,
-              letterSpacing: '0.4px',
-              color: lang === 'ru' ? RED_COLOR : 'rgba(255, 255, 255, 0.85)',
-              transition: 'color 0.25s ease',
-              lineHeight: '24px',
-            }}
-          >
-            RU
-          </Box>
-
-          <Box
-            component="span"
-            onClick={(e) => {
-              e.stopPropagation();
-              setLang('en');
-            }}
-            sx={{
-              flex: 1,
-              textAlign: 'center',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              zIndex: 1,
-              letterSpacing: '0.4px',
-              color: lang === 'en' ? RED_COLOR : 'rgba(255, 255, 255, 0.85)',
-              transition: 'color 0.25s ease',
-              lineHeight: '24px',
-            }}
-          >
-            EN
-          </Box>
+          {lang === 'ru' ? 'RU' : 'EN'}
         </Box>
       </Box>
     </Box>

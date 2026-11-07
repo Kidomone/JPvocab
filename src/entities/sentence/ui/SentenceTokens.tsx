@@ -45,7 +45,7 @@ export const SentenceTokens = ({
             sx={{
               display: 'inline-block',
               fontFamily: "'Noto Sans JP', 'Inter', sans-serif",
-              fontSize: { xs: '1.75rem', sm: '2.1rem' },
+              fontSize: { xs: '1.55rem', sm: '1.85rem' },
               fontWeight: 500,
               lineHeight: 1.2,
               color: '#000000',

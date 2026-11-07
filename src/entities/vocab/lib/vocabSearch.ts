@@ -1,5 +1,5 @@
 import type { VocabItem } from '../model/types';
-import { MOCK_WORD_DETAILS } from '../../word';
+
 
 export function katakanaToHiragana(str: string): string {
   if (!str) return '';
@@ -95,27 +95,6 @@ export function matchVocabItem(item: VocabItem, query: string): boolean {
         (readingHira && readingHira.includes(romajiKana))
       ) {
         return true;
-      }
-    }
-  }
-
-  const detail = MOCK_WORD_DETAILS[item.word];
-  if (detail) {
-    if (detail.meaning.toLowerCase().includes(clean)) return true;
-
-    const detailHira = katakanaToHiragana(detail.reading);
-    if (detailHira.includes(queryHira)) return true;
-
-    if (/^[a-z\s'-]+$/i.test(clean)) {
-      const romajiKana = romajiToHiragana(clean);
-      if (romajiKana && detailHira.includes(romajiKana)) return true;
-    }
-
-    if (detail.components) {
-      for (const comp of detail.components) {
-        if (comp.kanji.toLowerCase().includes(clean)) return true;
-        if (comp.meaning.toLowerCase().includes(clean)) return true;
-        if (katakanaToHiragana(comp.readings).includes(queryHira)) return true;
       }
     }
   }

@@ -1,3 +1,4 @@
+import concurrent.futures
 from typing import List
 from fastapi import APIRouter, Query, HTTPException, status
 from app.schemas.analyze import (
@@ -27,18 +28,44 @@ def analyze_sentence(req: AnalyzeSentenceRequest):
             detail="Input text cannot be empty",
         )
 
-    if req.source_lang == "ja" or (req.source_lang == "auto" and is_japanese_text(text)):
+    ui_lang = (req.lang or "ru").lower()
+    is_ja = req.source_lang == "ja" or (req.source_lang == "auto" and is_japanese_text(text))
+
+    if is_ja:
         source_lang = "ja"
-        target_lang = "en"
         japanese_text = text
-        translated_text, _, _ = translate_text(text, source_lang="ja", target_lang="en")
-        tokens_data = tokenize_japanese_sentence(japanese_text)
+        target_lang = "ru" if ui_lang == "ru" else "en"
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            fut_trans = executor.submit(translate_text, text, "ja", target_lang)
+            fut_sec = executor.submit(translate_text, text, "ja", "en") if ui_lang == "ru" else None
+            fut_tokens = executor.submit(tokenize_japanese_sentence, japanese_text)
+
+            translated_text, _, _ = fut_trans.result()
+            secondary_translation = None
+            if fut_sec:
+                en_trans, _, _ = fut_sec.result()
+                if en_trans and en_trans.lower() != translated_text.lower():
+                    secondary_translation = en_trans
+            tokens_data = fut_tokens.result()
     else:
         source_lang = "en"
         target_lang = "ja"
-        translated_text, _, _ = translate_text(text, source_lang="en", target_lang="ja")
-        japanese_text = translated_text
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            fut_ja = executor.submit(translate_text, text, "en", "ja")
+            fut_ru = executor.submit(translate_text, text, "en", "ru") if ui_lang == "ru" else None
+
+            japanese_trans, _, _ = fut_ja.result()
+            secondary_translation = None
+            if fut_ru:
+                ru_trans, _, _ = fut_ru.result()
+                secondary_translation = ru_trans
+
+        japanese_text = japanese_trans
+        translated_text = japanese_trans
         tokens_data = tokenize_english_sentence(text, context_translation=japanese_text)
+
 
     tokens = [
         TokenDetail(
@@ -60,6 +87,7 @@ def analyze_sentence(req: AnalyzeSentenceRequest):
         target_lang=target_lang,
         japanese_text=japanese_text,
         translation=translated_text,
+        secondary_translation=secondary_translation,
         tokens=tokens,
     )
 
