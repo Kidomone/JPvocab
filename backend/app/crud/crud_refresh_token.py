@@ -10,7 +10,7 @@ def create_refresh_token_record(
     token: str,
     expires_at: datetime,
 ) -> RefreshToken:
-
+    """Store the jti (JWT ID from payload) in the database instead of the full token string."""
     token_record = RefreshToken(
         user_id=user_id,
         token=token,

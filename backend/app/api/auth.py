@@ -68,12 +68,12 @@ def register(
 
     token_payload = {"sub": str(new_user.id), "username": new_user.username}
     access_token, expires_in = create_access_token(token_payload)
-    refresh_token, refresh_expires_at = create_refresh_token(token_payload)
+    refresh_token, refresh_expires_at, jti = create_refresh_token(token_payload)
 
     create_refresh_token_record(
         db=db,
         user_id=new_user.id,
-        token=refresh_token,
+        token=jti,
         expires_at=refresh_expires_at,
     )
 
@@ -111,12 +111,12 @@ def login(
 
     token_payload = {"sub": str(user.id), "username": user.username}
     access_token, expires_in = create_access_token(token_payload)
-    refresh_token, refresh_expires_at = create_refresh_token(token_payload)
+    refresh_token, refresh_expires_at, jti = create_refresh_token(token_payload)
 
     create_refresh_token_record(
         db=db,
         user_id=user.id,
-        token=refresh_token,
+        token=jti,
         expires_at=refresh_expires_at,
     )
 
@@ -179,7 +179,8 @@ def refresh_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    db_token = get_refresh_token(db, token_str)
+    jti = payload.get("jti")
+    db_token = (get_refresh_token(db, jti) if jti else None) or get_refresh_token(db, token_str)
     if not db_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -235,7 +236,14 @@ def revoke_token(
     db: Session = Depends(get_db),
 ):
     token_str = revoke_in.refresh_token.strip()
-    success = revoke_refresh_token(db, token_str)
+    jti = None
+    try:
+        t_payload = decode_token(token_str)
+        jti = t_payload.get("jti")
+    except Exception:
+        pass
+
+    success = (revoke_refresh_token(db, jti) if jti else False) or revoke_refresh_token(db, token_str)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -257,7 +265,14 @@ def logout(
     db: Session = Depends(get_db),
 ):
     token_str = logout_in.refresh_token.strip()
-    revoked = revoke_refresh_token(db, token_str)
+    jti = None
+    try:
+        t_payload = decode_token(token_str)
+        jti = t_payload.get("jti")
+    except Exception:
+        pass
+
+    revoked = (revoke_refresh_token(db, jti) if jti else False) or revoke_refresh_token(db, token_str)
     return RevokeResponse(
         message="Logged out successfully. Session refresh token revoked." if revoked else "Logged out (session was already ended or token not found).",
         revoked=revoked,
