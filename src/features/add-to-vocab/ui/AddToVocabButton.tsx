@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { addWordApi } from '../../../entities/vocab';
+import {
+  addWordApi,
+  isWordSaved,
+  isCacheLoaded,
+  ensureUserWordsLoaded,
+} from '../../../entities/vocab';
 import type { WordDetail } from '../../../entities/word';
 import { useTranslation } from '../../../shared';
 import { useAuth } from '../../../features/auth';
 
 export interface AddToVocabButtonProps {
   word?: WordDetail;
-  onAdd?: (word: WordDetail) => void;
+  onAdd?: (word: WordDetail, alreadyExists?: boolean) => void;
 }
 
 export const AddToVocabButton = ({ word, onAdd }: AddToVocabButtonProps) => {
@@ -18,13 +23,32 @@ export const AddToVocabButton = ({ word, onAdd }: AddToVocabButtonProps) => {
   const location = useLocation();
 
   const [prevWordKey, setPrevWordKey] = useState<string | undefined>(word?.word);
-  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isSaved, setIsSaved] = useState<boolean>(() => (word ? isWordSaved(word.word) : false));
   const [justAdded, setJustAdded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const wordKey = word?.word;
+
+  useEffect(() => {
+    if (!isAuthenticated || !wordKey) {
+      setIsSaved(false);
+      return;
+    }
+
+    if (isCacheLoaded()) {
+      setIsSaved(isWordSaved(wordKey));
+    } else {
+      ensureUserWordsLoaded()
+        .then((set) => {
+          setIsSaved(set.has(wordKey.trim()));
+        })
+        .catch(() => {});
+    }
+  }, [wordKey, isAuthenticated]);
+
   if (word?.word !== prevWordKey) {
     setPrevWordKey(word?.word);
-    setIsSaved(false);
+    setIsSaved(word ? isWordSaved(word.word) : false);
     setJustAdded(false);
   }
 
@@ -36,15 +60,24 @@ export const AddToVocabButton = ({ word, onAdd }: AddToVocabButtonProps) => {
       return;
     }
 
+    if (isSaved) {
+      onAdd?.(word, true);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await addWordApi(word);
+      const res = await addWordApi(word);
       setIsSaved(true);
-      setJustAdded(true);
-      onAdd?.(word);
-      setTimeout(() => {
-        setJustAdded(false);
-      }, 2200);
+      if (res.alreadyExists) {
+        onAdd?.(word, true);
+      } else {
+        setJustAdded(true);
+        onAdd?.(word, false);
+        setTimeout(() => {
+          setJustAdded(false);
+        }, 2200);
+      }
     } catch (err) {
       console.error('Failed to add word to backend server:', err);
     } finally {

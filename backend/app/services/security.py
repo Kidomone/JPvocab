@@ -8,22 +8,14 @@ from app.config import settings
 
 
 def get_password_hash(password: str) -> str:
-    """
-    Hash a password using bcrypt (dedicated strong password hashing algorithm).
-    """
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verify a plain password against stored hash.
-    Supports bcrypt and falls back to legacy sha256 for backward compatibility.
-    """
     if not hashed_password:
         return False
 
-    # Check for bcrypt prefix ($2a$, $2b$, $2y$)
     if hashed_password.startswith(("$2a$", "$2b$", "$2y$")):
         try:
             return bcrypt.checkpw(
@@ -33,7 +25,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         except Exception:
             return False
 
-    # Legacy sha256 salt fallback
     legacy_hash = hashlib.sha256(f"jpvocab_salt_{plain_password}".encode("utf-8")).hexdigest()
     return secrets.compare_digest(legacy_hash, hashed_password)
 
@@ -42,10 +33,7 @@ def create_access_token(
     data: Dict[str, Any],
     expires_delta: Optional[timedelta] = None
 ) -> tuple[str, int]:
-    """
-    Create a JWT access token with defined expiration.
-    Returns (token, expires_in_seconds).
-    """
+
     to_encode = data.copy()
     now = datetime.now(timezone.utc)
     
@@ -71,10 +59,7 @@ def create_refresh_token(
     data: Dict[str, Any],
     expires_delta: Optional[timedelta] = None
 ) -> tuple[str, datetime]:
-    """
-    Create a refresh token with defined expiration.
-    Returns (token, expires_at_datetime).
-    """
+
     to_encode = data.copy()
     now = datetime.now(timezone.utc)
     
@@ -95,7 +80,4 @@ def create_refresh_token(
 
 
 def decode_token(token: str) -> Dict[str, Any]:
-    """
-    Decode and validate a JWT token. Raises jwt.PyJWTError on failure.
-    """
     return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])

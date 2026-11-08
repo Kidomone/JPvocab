@@ -27,7 +27,7 @@ export const VocabSearchBar = ({
     <Box
       sx={{
         width: '100%',
-        maxWidth: 780,
+        maxWidth: 1020,
         backgroundColor: '#ECECEC',
         borderRadius: '8px',
         px: 2,

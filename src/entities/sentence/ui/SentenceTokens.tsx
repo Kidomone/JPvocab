@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { RED_COLOR, useTranslation } from '../../../shared';
+import { RED_COLOR, useTranslation, parseFurigana } from '../../../shared';
 import type { ParsedToken } from '../model/types';
 import type { WordDetail } from '../../word';
 
@@ -23,7 +23,8 @@ export const SentenceTokens = ({
       sx={{
         display: 'flex',
         flexWrap: 'wrap',
-        gap: 1.5,
+        rowGap: { xs: 2.5, sm: 3 },
+        columnGap: 1.5,
         alignItems: 'baseline',
         mb: 8,
       }}
@@ -47,7 +48,7 @@ export const SentenceTokens = ({
               fontFamily: "'Noto Sans JP', 'Inter', sans-serif",
               fontSize: { xs: '1.55rem', sm: '1.85rem' },
               fontWeight: 500,
-              lineHeight: 1.2,
+              lineHeight: 1.25,
               color: '#000000',
               cursor: tok.detail ? 'pointer' : 'default',
               px: 0.8,
@@ -75,10 +76,37 @@ export const SentenceTokens = ({
             }}
             title={tok.detail ? `${t('tokenTooltip')} ${tok.text}` : undefined}
           >
-            {tok.text}
+            {(() => {
+              const segments = parseFurigana(tok.text, tok.reading || tok.detail?.reading);
+              return segments.map((seg, sIdx) =>
+                seg.reading ? (
+                  <Box
+                    key={sIdx}
+                    component="ruby"
+                    sx={{
+                      rubyPosition: 'over',
+                      '& rt': {
+                        fontSize: '0.52em',
+                        fontWeight: 400,
+                        color: '#555555',
+                        letterSpacing: '0.02em',
+                        userSelect: 'none',
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                      },
+                    }}
+                  >
+                    {seg.text}
+                    <rt>{seg.reading}</rt>
+                  </Box>
+                ) : (
+                  <span key={sIdx}>{seg.text}</span>
+                )
+              );
+            })()}
           </Box>
         );
       })}
     </Box>
   );
 };
+

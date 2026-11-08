@@ -7,6 +7,7 @@ from app.schemas.word import WordCreate, WordUpdate, WordResponse
 from app.api.deps import get_current_user
 from app.crud.crud_word import (
     get_word_by_id,
+    get_word_by_text,
     get_words,
     create_word,
     update_word,
@@ -28,7 +29,13 @@ def add_word_to_vocabulary(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to add words to another user's vocabulary",
         )
-    # Automatically assign current authenticated user
+    existing_word = get_word_by_text(db, current_user.id, word_in.word)
+    if existing_word:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Word '{word_in.word.strip()}' is already in your vocabulary",
+        )
+
     word_in.user_id = current_user.id
     return create_word(db, word_in)
 

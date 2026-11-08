@@ -11,7 +11,7 @@ export interface WordCardProps {
 }
 
 export const WordCard = ({ wordDetail, actionSlot, isLoading = false }: WordCardProps) => {
-  const { lang, t } = useTranslation();
+  const { t } = useTranslation();
 
   if (isLoading || !wordDetail) {
     return (
@@ -40,13 +40,6 @@ export const WordCard = ({ wordDetail, actionSlot, isLoading = false }: WordCard
   const hasComponents = wordDetail.components && wordDetail.components.length > 0;
   const isNotFound = Boolean(wordDetail.notFound || !wordDetail.meaning || !wordDetail.meaning.trim());
 
-  const formatMeaning = (meaning: string) => {
-    if (!meaning) return '';
-    if (lang === 'en') {
-      return meaning.replace(/^значение:\s*/i, '');
-    }
-    return meaning.replace(/^definition of\s*/i, '');
-  };
   return (
 
     <Box
@@ -69,78 +62,78 @@ export const WordCard = ({ wordDetail, actionSlot, isLoading = false }: WordCard
         <Box>
           {/* Main Word Overview */}
           <Box sx={{ mb: 2.5 }}>
-            <Box
+            <Typography
+              component="h2"
               sx={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                gap: 2,
+                fontFamily: "'Noto Sans JP', sans-serif",
+                fontWeight: 700,
+                fontSize:
+                  wordDetail.word.length > 10
+                    ? '1.5rem'
+                    : wordDetail.word.length > 6
+                    ? '1.75rem'
+                    : '2.05rem',
+                lineHeight: 1.2,
+                wordBreak: 'break-word',
+                color: '#FFFFFF',
                 mb: 0.5,
               }}
             >
-              <Typography
-                component="span"
-                sx={{
-                  fontFamily: "'Noto Sans JP', sans-serif",
-                  fontWeight: 700,
-                  fontSize: wordDetail.word.length > 5 ? '1.75rem' : '2.05rem',
-                  lineHeight: 1.15,
-                  flexShrink: 0,
-                }}
-              >
-                {wordDetail.word}
-              </Typography>
-
-              {isNotFound ? (
-                <Box
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    backgroundColor: 'rgba(0, 0, 0, 0.24)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '6px',
-                    px: 1.25,
-                    py: 0.4,
-                    textAlign: 'right',
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: '0.82rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      fontWeight: 500,
-                    }}
-                  >
-                    {t('wordNotFoundInDb')}
-                  </Typography>
-                </Box>
-              ) : (
-                <Typography
-                  component="span"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '1.18rem',
-                    textAlign: 'right',
-                    lineHeight: 1.3,
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {formatMeaning(wordDetail.meaning)}
-                </Typography>
-              )}
-            </Box>
+              {wordDetail.word}
+            </Typography>
 
             {/* Readings */}
-            <Typography
-              sx={{
-                fontSize: '0.9rem',
-                color: 'rgba(255, 255, 255, 0.88)',
-                fontFamily: "'Noto Sans JP', sans-serif",
-                mt: 0.5,
-              }}
-            >
-              {wordDetail.reading}
-            </Typography>
+            {wordDetail.reading && wordDetail.reading !== wordDetail.word && (
+              <Typography
+                sx={{
+                  fontSize: '0.92rem',
+                  color: 'rgba(255, 255, 255, 0.85)',
+                  fontFamily: "'Noto Sans JP', sans-serif",
+                  mb: 1,
+                }}
+              >
+                {wordDetail.reading}
+              </Typography>
+            )}
+
+            {/* Meaning */}
+            {isNotFound ? (
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(0, 0, 0, 0.24)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '6px',
+                  px: 1.25,
+                  py: 0.4,
+                  mt: 0.5,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '0.82rem',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fontWeight: 500,
+                  }}
+                >
+                  {t('wordNotFoundInDb')}
+                </Typography>
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '1.18rem',
+                  lineHeight: 1.35,
+                  color: '#FFFFFF',
+                  wordBreak: 'break-word',
+                  mt: 0.5,
+                }}
+              >
+                {wordDetail.meaning}
+              </Typography>
+            )}
           </Box>
 
           {/* Divider */}

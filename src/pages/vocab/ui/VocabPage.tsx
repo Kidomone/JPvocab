@@ -201,7 +201,7 @@ export const VocabPage = () => {
         </Typography>
 
         {fetchError && (
-          <Alert severity="warning" sx={{ mb: 2.5, width: '100%', maxWidth: 780 }}>
+          <Alert severity="warning" sx={{ mb: 2.5, width: '100%', maxWidth: 1020 }}>
             {fetchError}
           </Alert>
         )}
@@ -219,7 +219,7 @@ export const VocabPage = () => {
           <Box
             sx={{
               width: '100%',
-              maxWidth: 780,
+              maxWidth: 1020,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',

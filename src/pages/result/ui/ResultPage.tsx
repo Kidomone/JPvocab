@@ -22,56 +22,48 @@ export const ResultPage = () => {
 
   const [activeWord, setActiveWord] = useState<WordDetail | null>(null);
   const [selectedTokenId, setSelectedTokenId] = useState<string>('1');
-  const [prevRawText, setPrevRawText] = useState(rawText);
-  const [prevLang, setPrevLang] = useState(lang);
   const [isLoading, setIsLoading] = useState(Boolean(rawText.trim()));
   const [analysisResult, setAnalysisResult] = useState<AnalyzeSentenceResult | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  if (rawText !== prevRawText || lang !== prevLang) {
-    setPrevRawText(rawText);
-    setPrevLang(lang);
-    setIsLoading(Boolean(rawText.trim()));
-  }
-
   useEffect(() => {
-    if (!rawText.trim()) {
+    const clean = rawText.trim();
+    if (!clean) {
       setIsLoading(false);
       setAnalysisResult(null);
       setActiveWord(null);
       return;
     }
 
-    if (!isLoading) return;
+    setIsLoading(true);
+    let isCancelled = false;
 
-    let isMounted = true;
-    analyzeSentenceApi(rawText, lang)
+    analyzeSentenceApi(clean, lang)
       .then((res) => {
-        if (!isMounted) return;
+        if (isCancelled) return;
         setAnalysisResult(res);
         if (res.tokens.length > 0) {
-          const currentWordKey = activeWord?.word;
-          const matchingToken = res.tokens.find((t) => t.detail?.word === currentWordKey);
           const firstWithDetail = res.tokens.find((t) => t.detail);
-          const selected = matchingToken || firstWithDetail || res.tokens[0];
+          const selected = firstWithDetail || res.tokens[0];
           setSelectedTokenId(selected.id);
           setActiveWord(selected.detail || null);
         }
       })
       .catch((err) => {
+        if (isCancelled) return;
         console.error('Failed to analyze sentence:', err);
       })
       .finally(() => {
-        if (isMounted) {
+        if (!isCancelled) {
           setIsLoading(false);
         }
       });
 
     return () => {
-      isMounted = false;
+      isCancelled = true;
     };
-  }, [rawText, lang, isLoading, activeWord?.word]);
+  }, [rawText, lang]);
 
   const tokens: ParsedToken[] = analysisResult?.tokens || [];
 
@@ -90,10 +82,14 @@ export const ResultPage = () => {
     }
   };
 
-  const handleWordAdded = (word: WordDetail) => {
-    const msg = lang === 'en'
-      ? `Word "${word.word}" added to dictionary`
-      : `Слово «${word.word}» добавлено в словарь`;
+  const handleWordAdded = (word: WordDetail, alreadyExists?: boolean) => {
+    const msg = alreadyExists
+      ? (lang === 'en'
+          ? `Word "${word.word}" is already in dictionary`
+          : `Слово «${word.word}» уже добавлено в словарь`)
+      : (lang === 'en'
+          ? `Word "${word.word}" added to dictionary`
+          : `Слово «${word.word}» добавлено в словарь`);
     setSnackbarMessage(msg);
     setSnackbarOpen(true);
   };

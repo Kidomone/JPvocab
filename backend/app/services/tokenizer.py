@@ -35,11 +35,40 @@ def katakana_to_hiragana(text: str) -> str:
 
 def tokenize_japanese_sentence(text: str) -> List[Dict[str, Any]]:
     tok = get_tokenizer()
-    mode = tokenizer.Tokenizer.SplitMode.A
-    tokens = tok.tokenize(text, mode)
+    mode = tokenizer.Tokenizer.SplitMode.C
+    raw_tokens = list(tok.tokenize(text, mode))
 
     results = []
-    for token in tokens:
+    i = 0
+    while i < len(raw_tokens):
+        if i + 1 < len(raw_tokens):
+            t1 = raw_tokens[i]
+            t2 = raw_tokens[i + 1]
+            p1 = t1.part_of_speech()[0] if t1.part_of_speech() else ""
+            p2 = t2.part_of_speech()[0] if t2.part_of_speech() else ""
+
+            if p1 in ("名詞", "接頭辞") and p2 in ("名詞", "接尾辞"):
+                comb_surface = t1.surface() + t2.surface()
+                dict_data = search_japanese_word(comb_surface)
+                if dict_data and dict_data.get("meaning_summary"):
+                    reading_hiragana = dict_data.get("reading") or (
+                        katakana_to_hiragana(t1.reading_form()) + katakana_to_hiragana(t2.reading_form())
+                    )
+                    components = get_kanji_breakdown(comb_surface)
+                    results.append({
+                        "surface": comb_surface,
+                        "lemma": dict_data.get("word", comb_surface),
+                        "reading": reading_hiragana,
+                        "pos": "名詞",
+                        "meaning": dict_data["meaning_summary"],
+                        "target_word": dict_data.get("word", comb_surface),
+                        "components": components,
+                        "alternatives": [],
+                    })
+                    i += 2
+                    continue
+
+        token = raw_tokens[i]
         surface = token.surface()
         lemma = token.dictionary_form()
         reading_katakana = token.reading_form()
@@ -47,7 +76,12 @@ def tokenize_japanese_sentence(text: str) -> List[Dict[str, Any]]:
         pos = token.part_of_speech()
         main_pos = pos[0] if pos else "Unknown"
 
-        dict_data = search_japanese_word(lemma, pos_hint=main_pos) or search_japanese_word(surface, pos_hint=main_pos)
+        normalized = token.normalized_form()
+        dict_data = (
+            search_japanese_word(lemma, pos_hint=main_pos)
+            or search_japanese_word(surface, pos_hint=main_pos)
+            or (search_japanese_word(normalized, pos_hint=main_pos) if normalized and normalized not in (lemma, surface) else None)
+        )
         meaning = dict_data["meaning_summary"] if dict_data else None
 
         components = get_kanji_breakdown(surface)
@@ -64,6 +98,7 @@ def tokenize_japanese_sentence(text: str) -> List[Dict[str, Any]]:
             "components": components,
             "alternatives": [],
         })
+        i += 1
 
     return results
 

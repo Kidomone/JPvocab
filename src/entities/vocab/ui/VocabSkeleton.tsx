@@ -14,7 +14,7 @@ export const VocabSkeleton = () => {
     <Box
       sx={{
         width: '100%',
-        maxWidth: 780,
+        maxWidth: 1020,
         overflowX: 'auto',
       }}
     >
@@ -25,7 +25,7 @@ export const VocabSkeleton = () => {
             '& th, & td': {
               borderBottom: '1px solid #D0D0D0',
               borderRight: '1px solid #D0D0D0',
-              padding: '12px 16px',
+              padding: '12px 18px',
             },
             '& th:last-child, & td:last-child': {
               borderRight: 'none',
@@ -34,10 +34,10 @@ export const VocabSkeleton = () => {
         >
           <TableHead>
             <TableRow sx={{ borderTop: '1px solid #D0D0D0' }}>
-              <TableCell align="center" sx={{ width: 80, fontWeight: 600 }}>№</TableCell>
+              <TableCell align="center" sx={{ width: 70, fontWeight: 600 }}>№</TableCell>
               <TableCell align="center" sx={{ width: 200, fontWeight: 600 }}>word</TableCell>
-              <TableCell align="center" sx={{ width: 220, fontWeight: 600 }}>meaning</TableCell>
-              <TableCell align="center" sx={{ width: 240, fontWeight: 600 }}>notes</TableCell>
+              <TableCell align="center" sx={{ width: 380, fontWeight: 600 }}>meaning</TableCell>
+              <TableCell align="center" sx={{ width: 320, fontWeight: 600 }}>notes</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

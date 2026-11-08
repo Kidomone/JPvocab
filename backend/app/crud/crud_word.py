@@ -7,6 +7,9 @@ from app.schemas.word import WordCreate, WordUpdate
 def get_word_by_id(db: Session, word_id: int) -> Optional[Word]:
     return db.query(Word).filter(Word.id == word_id).first()
 
+def get_word_by_text(db: Session, user_id: int, word: str) -> Optional[Word]:
+    return db.query(Word).filter(Word.user_id == user_id, Word.word == word.strip()).first()
+
 def get_words(
     db: Session,
     user_id: Optional[int] = None,

@@ -80,3 +80,5 @@ export interface Translations {
   wordNotFoundInDb: string;
   loginRequiredToSave: string;
 }
+
+

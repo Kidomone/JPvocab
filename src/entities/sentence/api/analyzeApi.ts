@@ -39,13 +39,27 @@ export async function analyzeSentenceApi(
     };
   }
 
-  const res = await fetch('/api/analyze/sentence', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ text: clean, source_lang: 'auto', lang }),
-  });
+  const doFetch = async () => {
+    return fetch('/api/analyze/sentence', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: clean, source_lang: 'auto', lang }),
+    });
+  };
+
+  let res: Response;
+  try {
+    res = await doFetch();
+    if (!res.ok && res.status >= 500) {
+      await new Promise((r) => setTimeout(r, 600));
+      res = await doFetch();
+    }
+  } catch {
+    await new Promise((r) => setTimeout(r, 600));
+    res = await doFetch();
+  }
 
   if (!res.ok) {
     throw new Error(`Sentence analysis failed: ${res.status}`);
@@ -60,6 +74,7 @@ export async function analyzeSentenceApi(
     return {
       id: String(idx + 1),
       text: t.surface,
+      reading: t.reading || undefined,
       isClickable: !isPunctuation,
       detail: !isPunctuation
         ? {

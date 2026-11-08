@@ -10,7 +10,7 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
-import { RED_COLOR, useTranslation } from '../../../shared';
+import { RED_COLOR, useTranslation, parseFurigana } from '../../../shared';
 import type { VocabItem } from '../model/types';
 
 export interface VocabTableProps {
@@ -33,7 +33,7 @@ export const VocabTable = ({
     <Box
       sx={{
         width: '100%',
-        maxWidth: 780,
+        maxWidth: 1020,
         overflowX: 'auto',
       }}
     >
@@ -49,7 +49,7 @@ export const VocabTable = ({
             '& th, & td': {
               borderBottom: '1px solid #D0D0D0',
               borderRight: '1px solid #D0D0D0',
-              padding: '12px 16px',
+              padding: '12px 18px',
               fontSize: '1.05rem',
             },
             '& th:last-child, & td:last-child': {
@@ -73,7 +73,7 @@ export const VocabTable = ({
               <TableCell
                 align="center"
                 sx={{
-                  width: 180,
+                  width: 200,
                   fontWeight: 600,
                   color: '#222222',
                   fontSize: '1.1rem',
@@ -84,7 +84,7 @@ export const VocabTable = ({
               <TableCell
                 align="center"
                 sx={{
-                  width: 220,
+                  width: 380,
                   fontWeight: 600,
                   color: '#222222',
                   fontSize: '1.1rem',
@@ -95,7 +95,7 @@ export const VocabTable = ({
               <TableCell
                 align="center"
                 sx={{
-                  width: 240,
+                  width: 320,
                   fontWeight: 600,
                   color: '#222222',
                   fontSize: '1.1rem',
@@ -139,11 +139,40 @@ export const VocabTable = ({
                   sx={{
                     fontFamily: "'Noto Sans JP', sans-serif",
                     fontWeight: 500,
-                    fontSize: '1.15rem',
+                    fontSize: '1.45rem',
                     color: '#111111',
+                    lineHeight: 1.6,
+                    py: item.reading && item.reading.trim() !== item.word.trim() ? '8px' : '14px',
                   }}
                 >
-                  {item.word}
+                  {(() => {
+                    const segments = parseFurigana(item.word, item.reading);
+                    return segments.map((seg, sIdx) =>
+                      seg.reading ? (
+                        <Box
+                          key={sIdx}
+                          component="ruby"
+                          sx={{
+                            rubyPosition: 'over',
+                            lineHeight: 1.6,
+                            '& rt': {
+                              fontSize: '0.75rem',
+                              fontWeight: 400,
+                              color: '#666666',
+                              letterSpacing: '0.03em',
+                              fontFamily: "'Noto Sans JP', sans-serif",
+                              userSelect: 'none',
+                            },
+                          }}
+                        >
+                          {seg.text}
+                          <rt>{seg.reading}</rt>
+                        </Box>
+                      ) : (
+                        <span key={sIdx}>{seg.text}</span>
+                      )
+                    );
+                  })()}
                 </TableCell>
                 <TableCell align="center" sx={{ color: '#222222' }}>
                   {item.meaning}

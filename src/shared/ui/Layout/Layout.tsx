@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Box } from '@mui/material';
 import { Header } from '../Header/Header';
-import { RED_COLOR } from '../../config';
 
 interface LayoutProps {
   children: ReactNode;
@@ -30,15 +29,7 @@ export const Layout = ({ children }: LayoutProps) => {
       >
         {children}
       </Box>
-
-      <Box
-        component="footer"
-        sx={{
-          height: 30,
-          backgroundColor: RED_COLOR,
-          width: '100%',
-        }}
-      />
     </Box>
   );
 };
+

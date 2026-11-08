@@ -1,4 +1,3 @@
-import os
 import sqlite3
 import threading
 from functools import lru_cache
@@ -159,8 +158,9 @@ def _search_japanese_word_internal(word: str, pos_hint: Optional[str] = None) ->
                     score += 100
                 else:
                     score -= 50
+            item_has_kanji = bool(item["kanji"] and has_kanji(item["kanji"]))
             if word_is_pure_kana:
-                if item["kanji"] is None:
+                if not item_has_kanji:
                     score += 50
                 else:
                     score -= 20
@@ -173,7 +173,8 @@ def _search_japanese_word_internal(word: str, pos_hint: Optional[str] = None) ->
         best_entry = max(entries_map.values(), key=score_entry)
 
         meanings = best_entry["translations"]
-        display_word = best_entry["kanji"] or best_entry["reading"] or word
+        real_kanji = best_entry["kanji"] if (best_entry["kanji"] and has_kanji(best_entry["kanji"])) else None
+        display_word = real_kanji or best_entry["reading"] or word
         display_reading = best_entry["reading"] or word
 
         return {
@@ -193,82 +194,10 @@ def search_japanese_word(word: str, pos_hint: Optional[str] = None) -> Optional[
 
 
 
-ENGLISH_PRONOUNS_MAP = {
-    "i": [
-        {"kanji": "私", "reading": "わたし", "meanings": ["I", "me"]},
-        {"kanji": "僕", "reading": "ぼく", "meanings": ["I (male informal)"]},
-        {"kanji": "俺", "reading": "おれ", "meanings": ["I (male casual)"]},
-        {"kanji": "あたし", "reading": "あたし", "meanings": ["I (female informal)"]},
-    ],
-    "me": [
-        {"kanji": "私", "reading": "わたし", "meanings": ["me", "I"]},
-        {"kanji": "僕", "reading": "ぼく", "meanings": ["me"]},
-    ],
-    "you": [
-        {"kanji": "あなた", "reading": "あなた", "meanings": ["you"]},
-        {"kanji": "君", "reading": "きみ", "meanings": ["you (familiar)"]},
-        {"kanji": "お前", "reading": "おまえ", "meanings": ["you (rough/casual)"]},
-    ],
-    "he": [
-        {"kanji": "彼", "reading": "かれ", "meanings": ["he", "him", "boyfriend"]},
-    ],
-    "him": [
-        {"kanji": "彼", "reading": "かれ", "meanings": ["him", "he"]},
-    ],
-    "she": [
-        {"kanji": "彼女", "reading": "かのじょ", "meanings": ["she", "her", "girlfriend"]},
-    ],
-    "her": [
-        {"kanji": "彼女", "reading": "かのじょ", "meanings": ["her", "she"]},
-    ],
-    "we": [
-        {"kanji": "私たち", "reading": "わたしたち", "meanings": ["we", "us"]},
-        {"kanji": "僕たち", "reading": "ぼくたち", "meanings": ["we (informal)"]},
-    ],
-    "us": [
-        {"kanji": "私たち", "reading": "わたしたち", "meanings": ["us", "we"]},
-    ],
-    "they": [
-        {"kanji": "彼ら", "reading": "かれら", "meanings": ["they", "them"]},
-    ],
-    "them": [
-        {"kanji": "彼ら", "reading": "かれら", "meanings": ["them", "they"]},
-    ],
-    "my": [
-        {"kanji": "私の", "reading": "わたしの", "meanings": ["my"]},
-    ],
-    "your": [
-        {"kanji": "あなたの", "reading": "あなたの", "meanings": ["your"]},
-    ],
-}
-
-
 def search_english_word(keyword: str, limit: int = 10, context_words: Optional[set] = None) -> List[Dict]:
     clean_keyword = keyword.strip().lower()
     if not clean_keyword:
         return []
-
-    if clean_keyword in ENGLISH_PRONOUNS_MAP:
-        pronoun_results = []
-        for p in ENGLISH_PRONOUNS_MAP[clean_keyword][:limit]:
-            word_key = p["kanji"]
-            reading_key = p["reading"]
-            in_ctx = False
-            exact_ctx = False
-            if context_words:
-                if (word_key in context_words) or (reading_key in context_words):
-                    in_ctx = True
-                    exact_ctx = True
-                elif any(is_kanji(ch) and any(ch in cw for cw in context_words) for ch in word_key):
-                    in_ctx = True
-            pronoun_results.append({
-                "kanji": word_key,
-                "reading": reading_key,
-                "meanings": p["meanings"],
-                "in_context": in_ctx,
-                "exact_context": exact_ctx,
-            })
-        return pronoun_results
 
     conn = _get_jmdict_connection()
     if not conn:
