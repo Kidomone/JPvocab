@@ -1,238 +1,261 @@
-## JPVocab (Интерактивный японский словарь и анализатор текста)
+# JPVocab
+
+Веб-приложение для разбора японских предложений и ведения личного словаря.  
+Web application for Japanese sentence parsing and vocabulary management.
+
+
+[Русский](#русский) | [English](#english)
+
 
 ---
 
-## 1. Назначение приложения
+# Русский
 
-**JPVocab** — это веб-приложение для изучающих японский язык, предназначенное для:
-- Сегментации и разбора предложений как на японском, так и на английском языке (с сопоставлением целевых слов и кандзи).
-- Детального изучения иероглифов (кандзи), входящих в состав слов, с их значениями и он/кун чтениями.
-- Ведения персонального словаря пользователя с двуязычным поиском (по кандзи, хирагане/катакане, ромадзи и английскому переводу) и добавлением собственных заметок.
-- Мультиязычного взаимодействия: полная поддержка интерфейса на русском и английском языках (`RU | EN`).
+## Описание
 
----
+JPVocab — сервис для тех, кто изучает японский язык и читает тексты в оригинале. Приложение делит текст на отдельные слова, показывает фуригану, переводит предложение, разбирает составные иероглифы и позволяет сохранять незнакомые слова в личный словарь.
 
-## 2. Основные пользовательские сценарии
+### Возможности
 
-1. **Разбор предложения (Текст -> Анализ)**
-   - Пользователь переходит на главную страницу (`/`), вводит текст на японском или английском языке в строку ввода и нажимает кнопку **«Разобрать»**.
-   - Приложение перенаправляет пользователя на страницу `/result`.
-
-2. **Интерактивный анализ и изучение структуры предложения**
-   - На странице результатов `/result` пользователь видит предложение, разбитое на интерактивные токены (слова).
-   - При нажатии на слово (японское или английское) оно выделяется фирменной подсветкой, а боковая карточка мгновенно обновляется, показывая перевод слова, чтение и составные иероглифы (кандзи).
-
-3. **Добавление слова в персональный словарь**
-   - В карточке выбранного слова пользователь нажимает кнопку **«Добавить в словарь»**, получая плавную визуальную обратную связь (`✓ Добавлено в словарь` ➔ `✓ В словаре`).
-
-4. **Ведение словаря, поиск и добавление заметок (`notes`)**
-   - Пользователь переходит в раздел **«Мой Словарь»** (`/vocab`).
-   - В таблице отображаются сохранённые слова, их значения и поле заметок.
-   - Поле **`notes`** создается пустым по умолчанию и редактируется прямо в таблице.
-   - Доступен **интеллектуальный поиск**: находит слова по японским иероглифам, по чтению каной (с взаимной нормализацией хираганы и катаканы), по транслитерации ромадзи (например, `neko` найдет `猫`) и по английскому смыслу (`cat`).
-
-5. **Переключение языка интерфейса (RU / EN)**
-   - В шапке приложения доступен анимированный переключатель языка (sliding pill).
-   - Выбранный язык сохраняется в `localStorage` и моментально переводит все элементы интерфейса, заголовки и подсказки.
-
-6. **Авторизация**
-   - Пользователь переходит на экран `/login`, вводит логин и пароль с валидацией формы, после чего возвращается на главную страницу.
+* **Разбор предложения на слова:** разделение текста на токены и определение базовых форм через анализатор Sudachi.
+* **Фуригана:** чтение каной отображается над иероглифами.
+* **Разбор иероглифов:** для каждого слова показываются входящие в него кандзи, их значения и чтения.
+* **Перевод предложения:** перевод на русский или английский язык.
+* **Личный словарь:** таблица сохранённых слов с возможностью добавлять заметки, удалять записи и искать слова.
+* **Поиск по словарю:** поиск по кандзи, чтению (хирагана/катакана), английскому значению и ромадзи.
+* **Два языка интерфейса:** переключение между русским и английским (RU / EN).
+* **Авторизация:** аккаунты пользователей (JWT) для хранения словаря в базе данных.
 
 ---
 
-## 3. Описание экранов
+## Сценарии использования
 
-| Маршрут | Экран | Назначение |
-| :--- | :--- | :--- |
-| `/` | **Home** (Главная) | Поле ввода текста на японском или английском языке и запуск синтаксического разбора. |
-| `/login` | **Login** (Авторизация) | Форма входа пользователя на фирменном красном фоне. |
-| `/result` | **Result** (Разбор предложения) | Интерактивные токены слов с подсветкой, перевод предложения и карточка слова с разбором кандзи. |
-| `/vocab` | **Vocab** (Мой Словарь) | Табличное представление сохранённых слов с поисковой строкой и редактируемыми заметками. |
+### 1. Разбор предложения
+1. Вставьте предложение на японском или английском языке в поле на главной странице и нажмите кнопку **«Разобрать»**.
+2. Откроется страница с переводом предложения и списком интерактивных слов с фуриганой.
+3. При нажатии на слово справа открывается карточка с его чтением, значением и списком входящих иероглифов.
 
----
+### 2. Просмотр иероглифов в слове
+1. Нажмите на интересующее слово в разобранном предложении.
+2. В карточке слова отобразятся все кандзи, входящие в его состав, с переводом и чтениями.
 
-## 4. UI-библиотека и дизайн-система
+### 3. Сохранение слова в словарь
+1. В карточке слова нажмите кнопку **«Добавить в словарь»**.
+2. Слово появится в разделе **«Словарь»**.
+3. В таблице можно добавить к слову текстовую заметку (например, контекст или пример).
 
-- **UI-библиотека**: [Material-UI (MUI)](https://mui.com/) (`@mui/material`, `@emotion/react`, `@emotion/styled`).
-- **Цветовая палитра**:
-  - Тёмно-красный: `#990F0F` (хедер, карточка слова, рамка фокуса инпутов, фон экрана логина).
-  - Контрастный чёрный: `#000000` / `#1E1E1E` (кнопки действий, снекбары).
-  - Фоновый серый: `#ECECEC` / `#F3F3F3` (поля ввода, строка поиска).
-  - Основной фон: `#FFFFFF` (контент страниц).
-- **Типографика**: шрифты `Inter` для латиницы/кириллицы и `Noto Sans JP` для японских кандзи и каны.
-- **Интернационализация (i18n)**: собственная легковесная реализация через React Context без внешних тяжелых зависимостей.
+### 4. Поиск по словарю
+1. Откройте раздел **«Словарь»**.
+2. Введите в строку поиска иероглифы, чтение каной, ромадзи или перевод на английском. Таблица отфильтрует результаты.
 
 ---
 
-## 5. Архитектура и структура проекта
+## Скриншоты
 
-Frontend-часть приложения организована по методологии **Feature-Sliced Design (FSD)**:
+### Главная страница
+Ввод текста для разбора.
+![Главная страница](docs/screenshots/01-home.png)
 
-```text
-JPvocab/
-├── backend/                        # Серверная часть (FastAPI, PostgreSQL, SQLAlchemy)
-│   ├── app/
-│   │   ├── api/                    # Маршруты REST API и центральный router.py
-│   │   ├── crud/                   # CRUD операции с базой данных
-│   │   ├── models/                 # SQLAlchemy ORM-модели
-│   │   ├── schemas/                # Схемы валидации
-│   │   ├── services/               # Сервисы анализа (SudachiPy, lemminflect, словари)
-│   │   ├── config.py               # Конфигурация и переменные окружения
-│   │   ├── database.py             # Подключение к PostgreSQL и фабрика сессий
-│   │   └── main.py                 # Точка входа FastAPI, CORS, lifespan
-│   ├── .env.example                # Шаблон переменных окружения
-│   ├── requirements.txt            # Зависимости
-│   └── run.py                      # Скрипт запуска сервера
-├── data/                           # Словари базы данных
-│   ├── JMdict.db                   # Японско-английский словарь
-│   └── kanjidic2.db                # Словарь кандзи
-├── docs/
-│   └── screenshots/ 
-├── public/
-│   └── favicon.svg                 # Иконка приложения
-├── src/
-│   ├── app/                        # Инициализация и глобальная настройка приложения
-│   │   ├── App.tsx                 # React Router, ThemeProvider и I18nProvider
-│   │   └── index.ts
-│   ├── pages/                      # Страницы приложения (композиция фичей и сущностей)
-│   │   ├── home/                   # Главная страница (/)
-│   │   ├── login/                  # Страница входа (/login)
-│   │   ├── result/                 # Результаты разбора предложения (/result)
-│   │   ├── vocab/                  # Страница словаря с поиском (/vocab)
-│   │   └── index.ts
-│   ├── features/                   # Пользовательские действия (интерактивные сценарии)
-│   │   ├── analyze-sentence/       # Поле ввода и запуск разбора
-│   │   ├── auth/                   # Форма авторизации пользователя
-│   │   ├── add-to-vocab/           # Кнопка добавления слова в словарь
-│   │   └── index.ts
-│   ├── entities/                   # Данные предметной области и бизнес-сущности
-│   │   ├── word/                   # Карточка слова, разбор кандзи, моковые данные
-│   │   ├── sentence/               # Список токенов, блок перевода, парсер, API клиент
-│   │   ├── vocab/                  # Таблица словаря, строка поиска, утилита поиска vocabSearch
-│   │   └── index.ts
-│   ├── shared/                     # Общие компоненты и утилиты без бизнес-логики
-│   │   ├── config/                 # Конфигурация темы Material UI и константы цветов
-│   │   ├── lib/                    # Модуль мультиязычности (i18n Context, переводы)
-│   │   ├── ui/                     # Layout, шапка Header с переключателем языка
-│   │   └── index.ts
-│   ├── index.css                   # Базовые глобальные стили
-│   ├── index.ts                    # Экспорт публичного интерфейса модулей
-│   └── main.tsx                    # Точка входа Vite
-├── index.html                      # HTML-шаблон с подключением шрифтов
-├── package.json
-├── tsconfig.json
-└── vite.config.ts                  # Конфигурация Vite и reverse-proxy на бэкенд
-```
+### Разбор предложения
+Слова с фуриганой, перевод фразы и карточка выбранного слова с иероглифами.
+![Разбор предложения](docs/screenshots/02-result.png)
 
-### Назначение слоёв:
+### Словарь
+Таблица сохранённых слов с заметками и строкой поиска.
+![Словарь](docs/screenshots/03-vocab.png)
 
-1. **`app/` (Настройка приложения)**:
-   - Содержит корневой компонент `App.tsx`, объединяющий `ThemeProvider`, `CssBaseline`, `I18nProvider` и маршрутизацию `BrowserRouter` / `Routes`.
-
-2. **`pages/` (Страницы)**:
-   - Экраны `HomePage`, `LoginPage`, `ResultPage`, `VocabPage`. Каждая страница собирает виджеты, пользовательские фичи и данные сущностей под конкретный URL.
-
-3. **`features/` (Пользовательские действия)**:
-   - `analyze-sentence`: форма ввода текста с валидацией длины/пустоты и анимацией ошибок.
-   - `auth`: форма логина с полями ввода имени пользователя и пароля.
-   - `add-to-vocab`: кнопка добавления изучаемого слова в личный словарь.
-
-4. **`entities/` (Сущности предметной области)**:
-   - `word`: модель слова, разбор кандзи на компоненты (`KanjiBreakdown`), база готовых слов.
-   - `sentence`: клиент API (`analyzeApi`), офлайн-парсер (`parseSentence`), кликабельные токены с подсветкой (`SentenceTokens`), блок перевода (`SentenceTranslation`).
-   - `vocab`: модель записи словаря, хранилище `localStorage` (`storage.ts`), таблица (`VocabTable`), строка поиска (`VocabSearchBar`) и движок двуязычного поиска (`vocabSearch.ts`).
-
-5. **`shared/` (Общие компоненты и конфигурация)**:
-   - `lib/i18n`: контекст локализации, словари переводов (RU / EN), хук `useTranslation`.
-   - `ui`: каркас приложения (`Layout`), общая шапка (`Header`) с анимированным переключателем языка.
-   - `config`: палитра цветов и тема MUI.
+### Вход в аккаунт
+Форма авторизации и регистрации.
+![Авторизация](docs/screenshots/04-login.png)
 
 ---
 
-## 6. Инструкция по запуску frontend
+## Запуск проекта
 
 ### Требования
-- Node.js (версия 18+)
-- `npm`
+* Node.js 18+
+* Python 3.10+
+* PostgreSQL
 
-### Шаги запуска:
+---
 
-1. Перейдите в каталог frontend-проекта:
+### Установка и запуск
+
+1. **Клонировать репозиторий:**
    ```bash
+   git clone https://github.com/Kidomone/JPvocab.git
    cd JPvocab
    ```
 
-2. Установите зависимости:
+2. **Установить зависимости фронтенда:**
    ```bash
    npm install
    ```
 
-3. Запустите сервер разработки:
+3. **Установить зависимости бэкенда:**
    ```bash
-   npm run dev
-   ```
-   Приложение откроется по адресу: [http://localhost:5173/](http://localhost:5173/)
-
-4. Проверка линтером:
-   ```bash
-   npm run lint
+   cd backend
+   pip install -r requirements.txt
+   cd ..
    ```
 
-5. Проверка сборки (typecheck + production build):
-   ```bash
-   npm run build
+4. **Настроить базу данных:**
+   Создайте базу данных в PostgreSQL:
+   ```sql
+   CREATE DATABASE jpvocab_db;
    ```
----
-## 7. Настройка и запуск Backend
-
-### 1. Подготовка базы данных (PostgreSQL)
-Убедитесь, что служба PostgreSQL запущена, и создайте базу данных:
-```sql
-CREATE DATABASE jpvocab_db;
-```
-
-### 2. Настройка окружения и установка зависимостей
-1. В папке `backend/` скопируйте шаблон переменных окружения:
-   ```bash
-   cp .env.example .env
-   ```
-2. Укажите в `.env` свои параметры подключения:
+   В папке `backend/` скопируйте `.env.example` в `.env` и укажите данные для подключения:
    ```env
    POSTGRES_HOST=localhost
    POSTGRES_PORT=5432
    POSTGRES_USER=postgres
-   POSTGRES_PASSWORD=your_password
+   POSTGRES_PASSWORD=postgres
    POSTGRES_DB=jpvocab_db
-   JMDICT_DB_PATH=data/JMdict.db
    ```
-3. Установите зависимости:
+   Таблицы создаются автоматически при первом старте бэкенда.
+
+5. **Запустить фронтенд и бэкенд одновременно:**
+   ```bash
+   npm run dev
+   ```
+   * Фронтенд: [http://localhost:5173](http://localhost:5173)
+   * Бэкенд API: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+   * Документация API: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+*(Для раздельного запуска используйте `npm run dev:front` и `npm run dev:back`).*
+
+---
+
+## Стек технологий
+
+* **Frontend:** React 19, TypeScript, Vite, Material-UI, React Router.
+* **Backend:** Python 3, FastAPI, SQLAlchemy, PostgreSQL, SQLite (словари).
+* **Анализ текста:** SudachiPy (морфологический анализ), lemminflect (английские леммы).
+* **Базы данных словарей:** JMdict, KANJIDIC2.
+
+---
+---
+
+# English
+
+## Overview
+
+JPVocab is a web application for Japanese language learners. It splits sentences into words, displays furigana above kanji, translates sentences, breaks words down into component kanji, and lets users save words into a personal vocabulary list.
+
+### Features
+
+* **Sentence tokenization:** splits text into words and finds dictionary forms using Sudachi.
+* **Furigana:** displays kana readings directly above kanji.
+* **Kanji breakdown:** shows individual kanji characters, English meanings, and readings from KANJIDIC2.
+* **Sentence translation:** translates sentences to Russian or English.
+* **Vocabulary list:** table of saved words with editable notes, deletion, and search.
+* **Vocabulary search:** search by kanji, kana, English meaning, or romaji.
+* **Two UI languages:** switch between English and Russian (EN / RU).
+* **Authentication:** user accounts (JWT) for saving vocabulary to the database.
+
+---
+
+## User Scenarios
+
+### 1. Sentence Analysis
+1. Enter a Japanese or English sentence on the home page and click **Analyze**.
+2. View the sentence translation and interactive word tokens with furigana.
+3. Click any word to open a card showing its reading, meaning, and component kanji.
+
+### 2. Inspecting Kanji in a Word
+1. Click a word in the parsed sentence.
+2. The card shows each kanji character in that word along with its meaning and on/kun readings.
+
+### 3. Saving a Word
+1. Click **Add to dictionary** on the word card.
+2. The word is saved to the **Dictionary** page.
+3. Add custom notes (such as context or example usage) directly in the table row.
+
+### 4. Searching the Dictionary
+1. Open the **Dictionary** page.
+2. Type kanji, kana, romaji, or English translation into the search bar to filter entries.
+
+---
+
+## Screenshots
+
+### Home Page
+Text input for analysis.
+![Home Page](docs/screenshots/01-home.png)
+
+### Sentence Analysis
+Words with furigana, sentence translation, and the selected word card.
+![Sentence Analysis](docs/screenshots/02-result.png)
+
+### Dictionary
+Table of saved words with notes and search.
+![Dictionary](docs/screenshots/03-vocab.png)
+
+### Sign In
+Authentication and registration form.
+![Sign In](docs/screenshots/04-login.png)
+
+---
+
+## Getting Started
+
+### Requirements
+* Node.js 18+
+* Python 3.10+
+* PostgreSQL
+
+---
+
+### Installation and Run
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Kidomone/JPvocab.git
+   cd JPvocab
+   ```
+
+2. **Install frontend dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Install backend dependencies:**
    ```bash
    cd backend
    pip install -r requirements.txt
+   cd ..
    ```
 
-### 3. Создание таблиц в БД
-Таблицы (`users`, `words`) создаются автоматически средствами SQLAlchemy при первом запуске сервера или тестов.
+4. **Configure PostgreSQL:**
+   Create the database:
+   ```sql
+   CREATE DATABASE jpvocab_db;
+   ```
+   In the `backend/` directory, copy `.env.example` to `.env` and set connection settings:
+   ```env
+   POSTGRES_HOST=localhost
+   POSTGRES_PORT=5432
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
+   POSTGRES_DB=jpvocab_db
+   ```
+   Tables are created automatically on first backend startup.
 
-### 4. Запуск сервера
-Запустите backend-сервер:
-```bash
-python run.py
-```
-* API будет доступно по адресу: [http://127.0.0.1:8000](http://127.0.0.1:8000)
-* Интерактивная документация Swagger: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+5. **Start frontend and backend together:**
+   ```bash
+   npm run dev
+   ```
+   * Frontend: [http://localhost:5173](http://localhost:5173)
+   * Backend API: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+   * API documentation: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
+*(To run services separately, use `npm run dev:front` and `npm run dev:back`).*
 
-## 8. Скриншоты экранов
+---
 
-### 1. Главная страница (/)
-![Home](docs/screenshots/01-home.png)
+## Tech Stack
 
-### 2. Экран разбора предложения (/result)
-![Result](docs/screenshots/02-result.png)
-
-### 3. Экран словаря (/vocab)
-![Vocab](docs/screenshots/03-vocab.png)
-
-### 4. Экран авторизации (/login)
-![Login](docs/screenshots/04-login.png)
+* **Frontend:** React 19, TypeScript, Vite, Material-UI, React Router.
+* **Backend:** Python 3, FastAPI, SQLAlchemy, PostgreSQL, SQLite (dictionaries).
+* **Text Analysis:** SudachiPy (morphological analyzer), lemminflect (English lemmatization).
+* **Dictionaries:** JMdict, KANJIDIC2.
